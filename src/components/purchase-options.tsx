@@ -9,21 +9,7 @@ import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/lib/use-auth"
 import { ShoppingCart, Download, Clock } from "lucide-react"
-
-interface Media {
-  id: string
-  title: string
-  type: "movie" | "series"
-  purchaseOptions: {
-    rent: {
-      price: number
-      duration: string
-    }
-    buy: {
-      price: number
-    }
-  }
-}
+import type { Media } from "@/interfaces/media"
 
 interface PurchaseOptionsProps {
   media: Media
