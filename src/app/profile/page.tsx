@@ -1,6 +1,8 @@
 "use client";
 
 import { useAuth } from "@/lib/use-auth";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 // Minimal interfaces for demonstration
 interface Movie {
@@ -20,6 +22,19 @@ interface Review {
 
 export default function ProfilePage() {
   const { user } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (user === null) {
+      router.push("/login");
+    }
+  }, [user, router]);
+
+  if (user === null) {
+    return (
+      <div className="flex justify-center items-center h-64">Loading...</div>
+    );
+  }
 
   // Placeholder data structure for demonstration
   const reviews: Review[] = [];
@@ -27,12 +42,6 @@ export default function ProfilePage() {
   const likedMovies: Movie[] = [];
   const watchlist: Movie[] = [];
   const purchasedMovies: Movie[] = [];
-
-  if (!user) {
-    return (
-      <div className="flex justify-center items-center h-64">Loading...</div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-zinc-950 pb-16">

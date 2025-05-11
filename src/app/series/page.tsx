@@ -1,10 +1,12 @@
 "use client";
 
-import type { MediaItem } from "@/components/media-grid";
+
 import MediaGrid from "@/components/media-grid";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { MediaItem } from "@/interfaces/media-item";
 import { getTopRatedMedia } from "@/lib/media-service";
+import { getAllMedia } from "@/services/media";
 import { useEffect, useState } from "react";
 
 const GENRES = [
@@ -31,18 +33,12 @@ export default function SeriesPage() {
   const [ratings, setRatings] = useState<number[]>([]);
 
   useEffect(() => {
-    getTopRatedMedia().then((data) => {
-      const series = data.filter((item) => item.type === "series");
-      setAllSeries(series);
-      setFiltered(series);
-      setYears([...new Set(series.map((s) => s.year))].sort((a, b) => b - a));
-      setRatings(
-        [...new Set(series.map((s) => Math.floor(s.rating)))].sort(
-          (a, b) => b - a
-        )
-      );
-    });
-  }, []);
+    const fetchData = async () => {
+      const data = await getAllMedia({ search ,type: "SERIES" });
+      setAllSeries(data?.data);
+    };
+    fetchData();
+  }, [search]);
 
   useEffect(() => {
     let series = allSeries;
@@ -55,13 +51,13 @@ export default function SeriesPage() {
       series = series.filter((s) => s.genres && s.genres.includes(genre));
     }
     if (year) {
-      series = series.filter((s) => String(s.year) === year);
+      series = series.filter((s) => String(s.releaseYear) === year);
     }
-    if (minRating) {
-      series = series.filter((s) => s.rating >= Number(minRating));
-    }
+    // if (minRating) {
+    //   series = series.filter((s) => s.rating >= Number(minRating));
+    // }
     setFiltered(series);
-  }, [search, genre, year, minRating, allSeries]);
+  }, [search, genre, year,  allSeries]);
 
   function resetFilters() {
     setSearch("");

@@ -42,9 +42,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signIn = async (email: string, password: string) => {
     try {
       const result = await login({ email, password });
-      // Adjust the following according to your API response structure
-      const users: User = await fetch("/api/auth/me").then((res) => res.json());
-      setUser(users);
+      // After login, fetch user info and update context
+      if (result) {
+        const data = await fetch("/api/auth/me").then((res) => res.json());
+        setUser(data.user);
+        return result
+      }
     } catch (error) {
       throw error;
     }

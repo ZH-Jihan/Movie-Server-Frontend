@@ -7,6 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import type { MovieFormState } from "@/interfaces/movie-form";
 import { useAuth } from "@/lib/use-auth";
+import { uploadMedia } from "@/services/media";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 
@@ -23,13 +24,13 @@ const GENRES = [
   "Animation",
 ];
 const MEDIA_TYPES = [
-  { label: "Movie", value: "movie" },
-  { label: "Series", value: "series" },
+  { label: "Movie", value: "MOVIE" },
+  { label: "Series", value: "SERIES" },
 ];
 
 export default function MoviePostPage() {
   const router = useRouter();
-  const { user, isAdmin } = useAuth();
+  const { isAdmin } = useAuth();
 
   const [form, setForm] = useState<MovieFormState>({
     title: "",
@@ -51,7 +52,7 @@ export default function MoviePostPage() {
   const [imageUrl, setImageUrl] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  if (!user || !isAdmin) {
+  if ( !isAdmin) {
     router.push("/login");
     return null;
   }
@@ -84,7 +85,10 @@ export default function MoviePostPage() {
   };
 
   const handleTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setForm((prev) => ({ ...prev, type: e.target.value }));
+    setForm((prev) => ({
+      ...prev,
+      type: e.target.value as "movie" | "series",
+    }));
   };
 
   async function uploadImage(file: File): Promise<string> {
@@ -100,33 +104,28 @@ export default function MoviePostPage() {
     setError("");
     setSuccess("");
     try {
+      const fromdata = new FormData();
       let uploadedImageUrl = imageUrl;
       if (imageFile) {
         uploadedImageUrl = await uploadImage(imageFile);
         setImageUrl(uploadedImageUrl);
       }
+
+      fromdata.append("file", imageFile as Blob);
+
       const movieData = {
         ...form,
-        image: uploadedImageUrl,
         releaseYear: Number(form.releaseYear),
         duration: Number(form.duration),
         price: Number(form.price),
         rentPrice: Number(form.rentPrice),
       };
-      console.log(movieData);
 
-      const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:5000/api/media", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token && { Authorization: `Bearer ${token}` }),
-        },
-        body: JSON.stringify(movieData),
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.message || "Failed to create media");
+      fromdata.append("data", JSON.stringify(movieData));
+      const res = await uploadMedia(fromdata)
+      console.log(res);
+      if (!res?.success) {
+        throw new Error(res?.message || "Failed to create media");
       }
       setSuccess("Movie posted successfully!");
       setForm({

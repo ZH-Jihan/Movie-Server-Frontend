@@ -1,5 +1,8 @@
 "use server";
 
+import { API_BASE_URL, token } from "@/lib/api";
+import { cookies } from "next/headers";
+
 export interface LoginData {
   email: string;
   password: string;
@@ -13,14 +16,13 @@ export interface RegisterData {
 
 export async function register(data: RegisterData) {
   try {
-    const response = await fetch("http://localhost:5000/api/auth/register", {
+    const response = await fetch(`${API_BASE_URL}/auth/register`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(data),
     });
-    console.log(response);
 
     if (!response.ok) {
       throw new Error("Registration failed");
@@ -34,13 +36,15 @@ export async function register(data: RegisterData) {
 
 export async function login(data: LoginData) {
   try {
-    const response = await fetch("http://localhost:5000/api/auth/login", {
+    const response = await fetch(`${API_BASE_URL}/auth/login`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(data),
     });
+
+    console.log(response);
 
     if (!response.ok) {
       throw new Error("Login failed");
@@ -57,8 +61,8 @@ export async function login(data: LoginData) {
       maxAge: 7 * 24 * 60 * 60, // 7 days
     };
 
-    const cookies = require("next/headers").cookies;
-    cookies().set("token", result.data, cookieOptions);
+    const cookieStore = await cookies();
+    cookieStore.set("token", result.data, cookieOptions);
 
     return result;
   } catch (error) {
@@ -68,16 +72,15 @@ export async function login(data: LoginData) {
 
 export async function getCurrentUser() {
   try {
-    const cookies = require("next/headers").cookies;
-    const token = cookies().get("token");
+    const tkn = await token();
 
-    if (!token) {
+    if (!tkn) {
       throw new Error("No authentication token found");
     }
 
     // Decode the token to get user information
     // Note: This is a simple decode, not a verification. The server should verify the token.
-    const tokenData = JSON.parse(atob(token.value.split(".")[1]));
+    const tokenData = JSON.parse(atob(tkn.value.split(".")[1]));
 
     return {
       id: tokenData.id,
@@ -92,14 +95,13 @@ export async function getCurrentUser() {
 
 export async function logout() {
   try {
-    const cookies = require("next/headers").cookies;
-    
+
     // Delete the authentication token cookie
-    cookies().delete("token");
+    const cookieStore = await cookies();
+    cookieStore.delete("token");
 
     return { success: true };
   } catch (error) {
     throw error;
   }
 }
-

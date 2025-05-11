@@ -4,7 +4,7 @@ import MediaGrid from "@/components/media-grid";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import type { MediaItem } from "@/interfaces/media-item";
-import { getTopRatedMedia } from "@/lib/media-service";
+import { getAllMedia } from "@/services/media";
 import { useEffect, useState } from "react";
 
 const GENRES = [
@@ -30,44 +30,30 @@ export default function MoviesPage() {
   const [years, setYears] = useState<number[]>([]);
   const [ratings, setRatings] = useState<number[]>([]);
 
-  useEffect(() => {
-    getTopRatedMedia().then((data) => {
-      const movies = data
-        .filter((item) => item.type === "movie")
-        .map((item) => ({
-          ...item,
-          type: "movie" as const,
-        }));
-      setAllMovies(movies);
-      setFiltered(movies);
-      // Extract unique years and ratings
-      setYears([...new Set(movies.map((m) => m.year))].sort((a, b) => b - a));
-      setRatings(
-        [...new Set(movies.map((m) => Math.floor(m.rating)))].sort(
-          (a, b) => b - a
-        )
-      );
-    });
-  }, []);
+
+useEffect(() => {
+  const fetchData = async () => {
+    const data = await getAllMedia({ search ,type: "MOVIE" });
+    console.log(data);
+    setAllMovies(data?.data);
+  };
+  fetchData();
+}, [search]);
+ 
 
   useEffect(() => {
     let movies = allMovies;
-    if (search) {
-      movies = movies.filter((m) =>
-        m.title.toLowerCase().includes(search.toLowerCase())
-      );
-    }
     if (genre) {
       movies = movies.filter((m) => m.genres && m.genres.includes(genre));
     }
     if (year) {
-      movies = movies.filter((m) => String(m.year) === year);
+      movies = movies.filter((m) => String(m.releaseYear) === year);
     }
-    if (minRating) {
-      movies = movies.filter((m) => m.rating >= Number(minRating));
-    }
+    // if (minRating) {
+    //   movies = movies.filter((m) => m. >= Number(minRating));
+    // }
     setFiltered(movies);
-  }, [search, genre, year, minRating, allMovies]);
+  }, [search, genre, year, allMovies]);
 
   function resetFilters() {
     setSearch("");

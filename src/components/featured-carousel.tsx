@@ -6,17 +6,8 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Play, Star, Plus } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { MediaItem } from "@/interfaces/media-item"
 
-interface MediaItem {
-  id: string
-  title: string
-  type: "movie" | "series"
-  posterUrl: string
-  backdropUrl: string
-  rating: number
-  year: number
-  genres: string[]
-}
 
 interface FeaturedCarouselProps {
   items: MediaItem[]
@@ -51,7 +42,7 @@ export default function FeaturedCarousel({ items }: FeaturedCarouselProps) {
         >
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent z-10" />
           <Image
-            src={item.backdropUrl || "/placeholder.svg"}
+            src={ "/placeholder.svg"}
             alt={item.title}
             fill
             className="object-cover"
@@ -64,9 +55,9 @@ export default function FeaturedCarousel({ items }: FeaturedCarouselProps) {
               </Badge>
               <div className="flex items-center text-yellow-500">
                 <Star className="fill-yellow-500 h-4 w-4 mr-1" />
-                <span className="text-sm font-medium">{item.rating.toFixed(1)}</span>
+                <span className="text-sm font-medium">{5}</span>
               </div>
-              <span className="text-sm text-muted-foreground">{item.year}</span>
+              <span className="text-sm text-muted-foreground">{item.releaseYear}</span>
             </div>
             <h2 className="text-3xl md:text-5xl font-bold mb-3 text-white">{item.title}</h2>
             <div className="flex flex-wrap gap-2 mb-6">

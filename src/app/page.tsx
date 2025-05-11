@@ -1,31 +1,31 @@
 import FeaturedCarousel from "@/components/featured-carousel";
 import MediaGrid from "@/components/media-grid";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Media } from "@/interfaces/media";
 import {
   getFeaturedMedia,
   getNewlyAddedMedia,
   getTopRatedMedia,
 } from "@/lib/media-service";
+import { getAllMedia } from "@/services/media";
 import { Search } from "lucide-react";
 
 export default async function Home() {
+  const allmedia = await getAllMedia({})
   const featuredMedia = await getFeaturedMedia();
   const topRatedMedia = await getTopRatedMedia();
   const newlyAddedMedia = await getNewlyAddedMedia();
+
 
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Hero Section */}
       <section className="relative mb-12">
         <FeaturedCarousel
-          items={featuredMedia.map((item) => ({
-            ...item,
-            type: item.type === "Movie" ? "movie" : "series",
-          }))}
+          items={allmedia?.data?.map((item : Media) => item)}
         />
 
         {/* Search Bar */}
@@ -73,10 +73,13 @@ export default async function Home() {
       </section>
 
       {/* Main Content */}
-      <Tabs defaultValue="top-rated" className="mb-12">
+      <Tabs defaultValue="all" className="mb-12">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-6">
           <div className="overflow-x-auto">
             <TabsList className="flex flex-nowrap gap-2 min-w-0 w-full">
+              <TabsTrigger className="min-w-max" value="all">
+               All
+              </TabsTrigger>
               <TabsTrigger className="min-w-max" value="top-rated">
                 Top Rated
               </TabsTrigger>
@@ -88,14 +91,23 @@ export default async function Home() {
               </TabsTrigger>
             </TabsList>
           </div>
-          <Button
+          {/* <Button
             variant="outline"
             size="sm"
             className="min-w-max w-full md:w-auto"
           >
             View All
-          </Button>
+          </Button> */}
         </div>
+
+        <TabsContent value="all">
+          <MediaGrid
+            items={allmedia?.data?.map((item : Media) => ({
+              ...item,
+              type: item.type.toLowerCase(),
+            }))}
+          />
+        </TabsContent>
 
         <TabsContent value="top-rated">
           <MediaGrid

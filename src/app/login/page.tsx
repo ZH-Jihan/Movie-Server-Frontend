@@ -38,7 +38,7 @@ const formSchema = z.object({
 export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { signIn, user, isAdmin } = useAuth();
+  const { signIn } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -52,13 +52,13 @@ export default function LoginPage() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     try {
-      const res = await signIn(values.email, values.password);
-      if (user || isAdmin) {
+      const res = await signIn(values.email, values.password);    
+      if (res.data) {
         toast({
           title: "Success",
           description: "You have successfully logged in",
         });
-        router.push("/");
+        router.push("/profile");
       }
     } catch (error) {
       toast({

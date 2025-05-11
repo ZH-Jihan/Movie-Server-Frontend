@@ -10,9 +10,10 @@ import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/lib/use-auth"
 import { ShoppingCart, Download, Clock } from "lucide-react"
 import type { Media } from "@/interfaces/media"
+import { MediaItem } from "@/interfaces/media-item"
 
 interface PurchaseOptionsProps {
-  media: Media
+  media: MediaItem
 }
 
 export default function PurchaseOptions({ media }: PurchaseOptionsProps) {
@@ -41,7 +42,7 @@ export default function PurchaseOptions({ media }: PurchaseOptionsProps) {
         title: "Purchase successful",
         description:
           purchaseType === "rent"
-            ? `You have rented "${media.title}" for ${media.purchaseOptions.rent.duration}`
+            ? `You have rented "${media.title}" for ${ "48 hours"}`
             : `You have purchased "${media.title}"`,
       })
       setIsProcessing(false)
@@ -71,10 +72,10 @@ export default function PurchaseOptions({ media }: PurchaseOptionsProps) {
                   <Clock className="h-4 w-4 text-muted-foreground" />
                   <span>Rent</span>
                 </div>
-                <div className="font-semibold">${media.purchaseOptions.rent.price.toFixed(2)}</div>
+                <div className="font-semibold">${media.rentPrice}</div>
               </div>
               <p className="text-sm text-muted-foreground mt-1">
-                Available for {media.purchaseOptions.rent.duration} after starting
+                Available for 48 hour after starting
               </p>
             </Label>
           </div>
@@ -87,7 +88,7 @@ export default function PurchaseOptions({ media }: PurchaseOptionsProps) {
                   <Download className="h-4 w-4 text-muted-foreground" />
                   <span>Buy</span>
                 </div>
-                <div className="font-semibold">${media.purchaseOptions.buy.price.toFixed(2)}</div>
+                <div className="font-semibold">${media.price}</div>
               </div>
               <p className="text-sm text-muted-foreground mt-1">Own forever and watch anytime</p>
             </Label>
@@ -100,8 +101,8 @@ export default function PurchaseOptions({ media }: PurchaseOptionsProps) {
           {isProcessing
             ? "Processing..."
             : purchaseType === "rent"
-              ? `Rent for $${media.purchaseOptions.rent.price.toFixed(2)}`
-              : `Buy for $${media.purchaseOptions.buy.price.toFixed(2)}`}
+              ? `Rent for $${media.rentPrice}`
+              : `Buy for $${media.price}`}
         </Button>
       </CardFooter>
     </Card>

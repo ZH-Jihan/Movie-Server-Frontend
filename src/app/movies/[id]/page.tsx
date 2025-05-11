@@ -5,15 +5,20 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Media } from "@/interfaces/media";
+import { MediaItem } from "@/interfaces/media-item";
 import type { MoviePageProps } from "@/interfaces/page-props";
-import { getMovieById, getRelatedMovies } from "@/lib/media-service";
+import { getRelatedMovies } from "@/lib/media-service";
+import { getAllMedia, getMediaById } from "@/services/media";
 import { Calendar, Clock, Play, Plus, Star, Tag, Users } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
 export default async function MoviePage({ params }: MoviePageProps) {
-  const movie = await getMovieById(params.id);
-  const relatedMovies = await getRelatedMovies(params.id);
+  const {id} =  await params
+  const {data:movie} = await getMediaById(id)
+  const {data:relatedMovies} = await getAllMedia({type: movie?.type});
+console.log(movie);
 
   if (!movie) {
     return <div>Movie not found</div>;
@@ -25,8 +30,8 @@ export default async function MoviePage({ params }: MoviePageProps) {
       <div className="relative h-[400px] md:h-[500px] mb-8 rounded-xl overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent z-10" />
         <Image
-          src={movie.backdropUrl || "/placeholder.svg"}
-          alt={movie.title}
+          src="/placeholder.svg"
+          alt={movie?.title || "Movie background"}
           fill
           className="object-cover"
           priority
@@ -35,8 +40,8 @@ export default async function MoviePage({ params }: MoviePageProps) {
           <div className="container px-4 pb-8 md:pb-12 flex flex-col md:flex-row gap-6">
             <div className="hidden md:block w-64 h-96 rounded-lg overflow-hidden shadow-lg flex-shrink-0">
               <Image
-                src={movie.posterUrl || "/placeholder.svg"}
-                alt={movie.title}
+                 src={movie?.posterUrl || "/placeholder.svg"}
+                alt={movie?.title || "Movie poster"}
                 width={256}
                 height={384}
                 className="w-full h-full object-cover"
@@ -48,11 +53,11 @@ export default async function MoviePage({ params }: MoviePageProps) {
                 <div className="flex items-center text-yellow-500">
                   <Star className="fill-yellow-500 h-4 w-4 mr-1" />
                   <span className="text-sm font-medium">
-                    {movie.rating.toFixed(1)}
+                    {5.0}
                   </span>
                 </div>
                 <span className="text-sm text-muted-foreground">
-                  {movie.year}
+                  {movie.releaseYear}
                 </span>
                 <span className="text-sm text-muted-foreground">
                   {movie.duration}
@@ -62,14 +67,14 @@ export default async function MoviePage({ params }: MoviePageProps) {
                 {movie.title}
               </h1>
               <div className="flex flex-wrap gap-2 mb-4">
-                {movie.genres.map((genre) => (
+                {movie?.genres?.map((genre : string) => (
                   <Badge key={genre} variant="outline">
                     {genre}
                   </Badge>
                 ))}
               </div>
               <p className="text-muted-foreground mb-6 max-w-3xl">
-                {movie.synopsis}
+                {movie.description}
               </p>
               <div className="flex flex-wrap gap-3">
                 <Button size="lg" className="gap-2">
@@ -98,7 +103,7 @@ export default async function MoviePage({ params }: MoviePageProps) {
               <div className="space-y-6">
                 <div>
                   <h2 className="text-xl font-semibold mb-3">Synopsis</h2>
-                  <p className="text-muted-foreground">{movie.synopsis}</p>
+                  <p className="text-muted-foreground">{movie.description}</p>
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -106,7 +111,7 @@ export default async function MoviePage({ params }: MoviePageProps) {
                     <div className="text-sm text-muted-foreground flex items-center gap-1">
                       <Calendar className="h-4 w-4" /> Release Date
                     </div>
-                    <div className="font-medium">{movie.releaseDate}</div>
+                    <div className="font-medium">{movie.releaseYear}</div>
                   </div>
                   <div className="space-y-1">
                     <div className="text-sm text-muted-foreground flex items-center gap-1">
@@ -118,13 +123,13 @@ export default async function MoviePage({ params }: MoviePageProps) {
                     <div className="text-sm text-muted-foreground flex items-center gap-1">
                       <Tag className="h-4 w-4" /> Genre
                     </div>
-                    <div className="font-medium">{movie.genres.join(", ")}</div>
+                    <div className="font-medium">{movie?.genres?.join(", ")}</div>
                   </div>
                   <div className="space-y-1">
                     <div className="text-sm text-muted-foreground flex items-center gap-1">
                       <Users className="h-4 w-4" /> Director
                     </div>
-                    <div className="font-medium">{movie.director}</div>
+                    {/* <div className="font-medium">{movie.director}</div> */}
                   </div>
                 </div>
 
@@ -132,24 +137,24 @@ export default async function MoviePage({ params }: MoviePageProps) {
 
                 <div>
                   <h2 className="text-xl font-semibold mb-3">Available On</h2>
-                  <div className="flex flex-wrap gap-3">
+                  {/* <div className="flex flex-wrap gap-3">
                     {movie.streamingPlatforms.map((platform) => (
                       <Badge key={platform} variant="secondary">
                         {platform}
                       </Badge>
                     ))}
-                  </div>
+                  </div> */}
                 </div>
               </div>
             </TabsContent>
 
             <TabsContent value="reviews">
-              <ReviewList mediaId={params.id} mediaType="movie" />
+              <ReviewList mediaId={"5"} mediaType="movie" />
             </TabsContent>
 
             <TabsContent value="cast">
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                {movie.cast.map((person) => (
+                {/* {movie.cast.map((person) => (
                   <div key={person.id} className="text-center">
                     <div className="aspect-square rounded-full overflow-hidden mb-2 mx-auto w-24 h-24">
                       <Image
@@ -165,7 +170,7 @@ export default async function MoviePage({ params }: MoviePageProps) {
                       {person.character}
                     </p>
                   </div>
-                ))}
+                ))} */}
               </div>
             </TabsContent>
           </Tabs>
