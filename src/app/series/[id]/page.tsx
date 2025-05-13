@@ -7,14 +7,17 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { SeriesPageProps } from "@/interfaces/page-props";
 import { getMovieById, getRelatedMovies } from "@/lib/media-service"; // Replace with getSeriesById, getRelatedSeries if available
+import { getAllMedia, getMediaById } from "@/services/media";
 import { Calendar, Clock, Play, Plus, Star, Tag, Users } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
 export default async function SeriesPage({ params }: SeriesPageProps) {
   // Replace getMovieById with getSeriesById if you have it
-  const series = await getMovieById(params.id);
-  const relatedSeries = await getRelatedMovies(params.id);
+const {id} =  await params
+  const {data} = await getMediaById(id)
+  const series = data.media
+  const {data:relatedSeries} = series.type ? await getAllMedia({type: series?.type}): {data: []};
 
   if (!series) {
     return <div>Series not found</div>;
@@ -26,7 +29,7 @@ export default async function SeriesPage({ params }: SeriesPageProps) {
       <div className="relative h-[400px] md:h-[500px] mb-8 rounded-xl overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent z-10" />
         <Image
-          src={series.backdropUrl || "/placeholder.svg"}
+          src={"/placeholder.svg"}
           alt={series.title}
           fill
           className="object-cover"
@@ -49,11 +52,11 @@ export default async function SeriesPage({ params }: SeriesPageProps) {
                 <div className="flex items-center text-yellow-500">
                   <Star className="fill-yellow-500 h-4 w-4 mr-1" />
                   <span className="text-sm font-medium">
-                    {series.rating.toFixed(1)}
+                    {data.avgRating || 5.0}
                   </span>
                 </div>
                 <span className="text-sm text-muted-foreground">
-                  {series.year}
+                  {series.releaseYear}
                 </span>
                 <span className="text-sm text-muted-foreground">
                   {series.duration}
@@ -70,7 +73,7 @@ export default async function SeriesPage({ params }: SeriesPageProps) {
                 ))}
               </div>
               <p className="text-muted-foreground mb-6 max-w-3xl">
-                {series.synopsis}
+                {series.description}
               </p>
               <div className="flex flex-wrap gap-3">
                 <Button size="lg" className="gap-2">
@@ -99,7 +102,7 @@ export default async function SeriesPage({ params }: SeriesPageProps) {
               <div className="space-y-6">
                 <div>
                   <h2 className="text-xl font-semibold mb-3">Synopsis</h2>
-                  <p className="text-muted-foreground">{series.synopsis}</p>
+                  <p className="text-muted-foreground">{series.description}</p>
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -107,7 +110,7 @@ export default async function SeriesPage({ params }: SeriesPageProps) {
                     <div className="text-sm text-muted-foreground flex items-center gap-1">
                       <Calendar className="h-4 w-4" /> Release Date
                     </div>
-                    <div className="font-medium">{series.releaseDate}</div>
+                    <div className="font-medium">{series.releaseYear}</div>
                   </div>
                   <div className="space-y-1">
                     <div className="text-sm text-muted-foreground flex items-center gap-1">
@@ -127,7 +130,7 @@ export default async function SeriesPage({ params }: SeriesPageProps) {
                     <div className="text-sm text-muted-foreground flex items-center gap-1">
                       <Users className="h-4 w-4" /> Director
                     </div>
-                    <div className="font-medium">{series.director}</div>
+                    {/* <div className="font-medium">{series.director}</div> */}
                   </div>
                 </div>
 
@@ -136,11 +139,11 @@ export default async function SeriesPage({ params }: SeriesPageProps) {
                 <div>
                   <h2 className="text-xl font-semibold mb-3">Available On</h2>
                   <div className="flex flex-wrap gap-3">
-                    {series.streamingPlatforms.map((platform: string) => (
+                    {/* {series.streamingPlatforms.map((platform: string) => (
                       <Badge key={platform} variant="secondary">
                         {platform}
                       </Badge>
-                    ))}
+                    ))} */}
                   </div>
                 </div>
               </div>
@@ -152,7 +155,7 @@ export default async function SeriesPage({ params }: SeriesPageProps) {
 
             <TabsContent value="cast">
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                {series.cast.map((person: any) => (
+                {/* {series.cast.map((person: any) => (
                   <div key={person.id} className="text-center">
                     <div className="aspect-square rounded-full overflow-hidden mb-2 mx-auto w-24 h-24">
                       <Image
@@ -168,7 +171,7 @@ export default async function SeriesPage({ params }: SeriesPageProps) {
                       {person.character}
                     </p>
                   </div>
-                ))}
+                ))} */}
               </div>
             </TabsContent>
           </Tabs>

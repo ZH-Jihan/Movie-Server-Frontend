@@ -5,20 +5,19 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Media } from "@/interfaces/media";
-import { MediaItem } from "@/interfaces/media-item";
 import type { MoviePageProps } from "@/interfaces/page-props";
-import { getRelatedMovies } from "@/lib/media-service";
 import { getAllMedia, getMediaById } from "@/services/media";
 import { Calendar, Clock, Play, Plus, Star, Tag, Users } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
 export default async function MoviePage({ params }: MoviePageProps) {
-  const {id} =  await params
-  const {data:movie} = await getMediaById(id)
-  const {data:relatedMovies} = await getAllMedia({type: movie?.type});
-console.log(movie);
+  const { id } = await params;
+  const { data } = await getMediaById(id);
+  const movie = data.media;
+  const { data: relatedMovies } = movie.type
+    ? await getAllMedia({ type: movie?.type })
+    : { data: [] };
 
   if (!movie) {
     return <div>Movie not found</div>;
@@ -40,7 +39,7 @@ console.log(movie);
           <div className="container px-4 pb-8 md:pb-12 flex flex-col md:flex-row gap-6">
             <div className="hidden md:block w-64 h-96 rounded-lg overflow-hidden shadow-lg flex-shrink-0">
               <Image
-                 src={movie?.posterUrl || "/placeholder.svg"}
+                src={movie?.posterUrl || "/placeholder.svg"}
                 alt={movie?.title || "Movie poster"}
                 width={256}
                 height={384}
@@ -52,9 +51,7 @@ console.log(movie);
                 <Badge variant="secondary">Movie</Badge>
                 <div className="flex items-center text-yellow-500">
                   <Star className="fill-yellow-500 h-4 w-4 mr-1" />
-                  <span className="text-sm font-medium">
-                    {5.0}
-                  </span>
+                  <span className="text-sm font-medium">{5.0}</span>
                 </div>
                 <span className="text-sm text-muted-foreground">
                   {movie.releaseYear}
@@ -67,7 +64,7 @@ console.log(movie);
                 {movie.title}
               </h1>
               <div className="flex flex-wrap gap-2 mb-4">
-                {movie?.genres?.map((genre : string) => (
+                {movie?.genres?.map((genre: string) => (
                   <Badge key={genre} variant="outline">
                     {genre}
                   </Badge>
@@ -123,7 +120,9 @@ console.log(movie);
                     <div className="text-sm text-muted-foreground flex items-center gap-1">
                       <Tag className="h-4 w-4" /> Genre
                     </div>
-                    <div className="font-medium">{movie?.genres?.join(", ")}</div>
+                    <div className="font-medium">
+                      {movie?.genres?.join(", ")}
+                    </div>
                   </div>
                   <div className="space-y-1">
                     <div className="text-sm text-muted-foreground flex items-center gap-1">
@@ -149,7 +148,7 @@ console.log(movie);
             </TabsContent>
 
             <TabsContent value="reviews">
-              <ReviewList mediaId={"5"} mediaType="movie" />
+              <ReviewList mediaId={movie?.id} mediaType="MOVIE" />
             </TabsContent>
 
             <TabsContent value="cast">

@@ -1,27 +1,47 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Label } from "@/components/ui/label"
-import { useToast } from "@/hooks/use-toast"
-import { useAuth } from "@/lib/use-auth"
-import { ShoppingCart, Download, Clock } from "lucide-react"
-import type { Media } from "@/interfaces/media"
-import { MediaItem } from "@/interfaces/media-item"
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/lib/use-auth";
+import { Clock, Download, ShoppingCart } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
+/**
+ * PurchaseOptions: Displays purchase and rental options for a media item.
+ * @param price - The price for buying the media
+ * @param rentPrice - The price for renting the media
+ * @param onPurchase - Callback when purchase is made
+ * @param onRent - Callback when rent is made
+ */
 interface PurchaseOptionsProps {
-  media: MediaItem
+  price: number;
+  rentPrice?: number;
+  onPurchase?: () => void;
+  onRent?: () => void;
 }
 
-export default function PurchaseOptions({ media }: PurchaseOptionsProps) {
-  const router = useRouter()
-  const { toast } = useToast()
-  const { user } = useAuth()
-  const [purchaseType, setPurchaseType] = useState<"rent" | "buy">("rent")
-  const [isProcessing, setIsProcessing] = useState(false)
+export default function PurchaseOptions({
+  price,
+  rentPrice,
+  onPurchase,
+  onRent,
+}: PurchaseOptionsProps) {
+  const router = useRouter();
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const [selected, setSelected] = useState<"buy" | "rent">("buy");
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const handlePurchase = async () => {
     if (!user) {
@@ -29,28 +49,28 @@ export default function PurchaseOptions({ media }: PurchaseOptionsProps) {
         title: "Login required",
         description: "Please log in to purchase this title",
         variant: "destructive",
-      })
-      router.push("/login")
-      return
+      });
+      router.push("/login");
+      return;
     }
 
-    setIsProcessing(true)
+    setIsProcessing(true);
 
     // Simulate payment processing
     setTimeout(() => {
       toast({
         title: "Purchase successful",
         description:
-          purchaseType === "rent"
-            ? `You have rented "${media.title}" for ${ "48 hours"}`
-            : `You have purchased "${media.title}"`,
-      })
-      setIsProcessing(false)
+          selected === "rent"
+            ? `You have rented "${price}" for ${"48 hours"}`
+            : `You have purchased "${price}"`,
+      });
+      setIsProcessing(false);
 
       // In a real app, redirect to the streaming page
       // router.push(`/watch/${media.id}`);
-    }, 1500)
-  }
+    }, 1500);
+  };
 
   return (
     <Card>
@@ -60,8 +80,8 @@ export default function PurchaseOptions({ media }: PurchaseOptionsProps) {
       </CardHeader>
       <CardContent>
         <RadioGroup
-          value={purchaseType}
-          onValueChange={(value) => setPurchaseType(value as "rent" | "buy")}
+          value={selected}
+          onValueChange={(value) => setSelected(value as "rent" | "buy")}
           className="space-y-4"
         >
           <div className="flex items-center space-x-2 border rounded-md p-4">
@@ -72,7 +92,7 @@ export default function PurchaseOptions({ media }: PurchaseOptionsProps) {
                   <Clock className="h-4 w-4 text-muted-foreground" />
                   <span>Rent</span>
                 </div>
-                <div className="font-semibold">${media.rentPrice}</div>
+                <div className="font-semibold">${rentPrice}</div>
               </div>
               <p className="text-sm text-muted-foreground mt-1">
                 Available for 48 hour after starting
@@ -88,23 +108,29 @@ export default function PurchaseOptions({ media }: PurchaseOptionsProps) {
                   <Download className="h-4 w-4 text-muted-foreground" />
                   <span>Buy</span>
                 </div>
-                <div className="font-semibold">${media.price}</div>
+                <div className="font-semibold">${price}</div>
               </div>
-              <p className="text-sm text-muted-foreground mt-1">Own forever and watch anytime</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Own forever and watch anytime
+              </p>
             </Label>
           </div>
         </RadioGroup>
       </CardContent>
       <CardFooter>
-        <Button className="w-full gap-2" onClick={handlePurchase} disabled={isProcessing}>
+        <Button
+          className="w-full gap-2"
+          onClick={handlePurchase}
+          disabled={isProcessing}
+        >
           <ShoppingCart className="h-4 w-4" />
           {isProcessing
             ? "Processing..."
-            : purchaseType === "rent"
-              ? `Rent for $${media.rentPrice}`
-              : `Buy for $${media.price}`}
+            : selected === "buy"
+            ? "Purchase"
+            : "Rent"}
         </Button>
       </CardFooter>
     </Card>
-  )
+  );
 }

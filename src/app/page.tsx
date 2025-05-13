@@ -25,7 +25,7 @@ export default async function Home() {
       {/* Hero Section */}
       <section className="relative mb-12">
         <FeaturedCarousel
-          items={allmedia?.data?.map((item : Media) => item)}
+          items={allmedia?.data?.map((item) => item)}
         />
 
         {/* Search Bar */}
@@ -102,7 +102,7 @@ export default async function Home() {
 
         <TabsContent value="all">
           <MediaGrid
-            items={allmedia?.data?.map((item : Media) => ({
+            items={allmedia?.data?.map((item ) => ({
               ...item,
               type: item.type.toLowerCase(),
             }))}

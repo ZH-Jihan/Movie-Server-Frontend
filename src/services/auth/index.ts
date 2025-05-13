@@ -1,6 +1,6 @@
 "use server";
 
-import { API_BASE_URL, token } from "@/lib/api";
+import { API_BASE_URL} from "@/lib/api";
 import { cookies } from "next/headers";
 
 export interface LoginData {
@@ -13,7 +13,10 @@ export interface RegisterData {
   email: string;
   password: string;
 }
-
+export const token = async () => {
+  const token = (await cookies())?.get("token");
+  return token;
+};
 export async function register(data: RegisterData) {
   try {
     const response = await fetch(`${API_BASE_URL}/auth/register`, {
@@ -82,12 +85,14 @@ export async function getCurrentUser() {
     // Note: This is a simple decode, not a verification. The server should verify the token.
     const tokenData = JSON.parse(atob(tkn.value.split(".")[1]));
 
-    return {
+    if (tokenData) {
+      return {
       id: tokenData.id,
       email: tokenData.email,
       name: tokenData.name,
       isAdmin: tokenData.role === "ADMIN" || false,
     };
+    }
   } catch (error) {
     throw error;
   }

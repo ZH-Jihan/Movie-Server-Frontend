@@ -9,7 +9,7 @@ import type { MovieFormState } from "@/interfaces/movie-form";
 import { useAuth } from "@/lib/use-auth";
 import { uploadMedia } from "@/services/media";
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 
 const GENRES = [
   "Action",
@@ -35,7 +35,7 @@ export default function MoviePostPage() {
   const [form, setForm] = useState<MovieFormState>({
     title: "",
     description: "",
-    type: "movie",
+    type: "MOVIE",
     genres: [],
     releaseYear: new Date().getFullYear(),
     duration: 120,
@@ -52,10 +52,11 @@ export default function MoviePostPage() {
   const [imageUrl, setImageUrl] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  if ( !isAdmin) {
-    router.push("/login");
-    return null;
-  }
+  useEffect(() => {
+    if (!isAdmin) {
+      router.push("/login");
+    }
+  }, [isAdmin, router]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -87,7 +88,7 @@ export default function MoviePostPage() {
   const handleTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setForm((prev) => ({
       ...prev,
-      type: e.target.value as "movie" | "series",
+      type: e.target.value as "MOVIE" | "SERIES",
     }));
   };
 
@@ -122,16 +123,16 @@ export default function MoviePostPage() {
       };
 
       fromdata.append("data", JSON.stringify(movieData));
-      const res = await uploadMedia(fromdata)
+      const res = await uploadMedia(fromdata);
       console.log(res);
       if (!res?.success) {
         throw new Error(res?.message || "Failed to create media");
       }
-      setSuccess("Movie posted successfully!");
+
       setForm({
         title: "",
         description: "",
-        type: "movie",
+        type: "MOVIE",
         genres: [],
         releaseYear: new Date().getFullYear(),
         duration: 120,
@@ -143,6 +144,7 @@ export default function MoviePostPage() {
       });
       setImageFile(null);
       setImageUrl("");
+      setSuccess("Movie posted successfully!");
     } catch (err: any) {
       setError(err.message);
     } finally {

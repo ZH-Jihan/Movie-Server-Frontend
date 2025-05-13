@@ -1,7 +1,7 @@
 export interface MovieFormState {
   title: string;
   description: string;
-  type: "movie" | "series";
+  type: "MOVIE" | "SERIES";
   genres: string[];
   releaseYear: number;
   duration: number;
