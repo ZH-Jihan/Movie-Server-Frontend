@@ -46,7 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (result) {
         const data = await fetch("/api/auth/me").then((res) => res.json());
         setUser(data.user);
-        return result
+        return result;
       }
     } catch (error) {
       throw error;
@@ -78,7 +78,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, signIn, signUp, signOut, isAdmin: user?.isAdmin || false }}
+      value={{
+        user,
+        signIn,
+        signUp,
+        signOut,
+        isAdmin: user?.isAdmin || false,
+        role: user?.isAdmin ? "ADMIN" : user ? "USER" : null,
+      }}
     >
       {children}
     </AuthContext.Provider>

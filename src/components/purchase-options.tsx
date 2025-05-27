@@ -13,9 +13,11 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/use-auth";
+import { calculateDiscountedPrice, validateCoupon } from "@/services/coupon";
 import { Clock, Download, ShoppingCart } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Input } from "./ui/input";
 
 /**
  * PurchaseOptions: Displays purchase and rental options for a media item.
@@ -42,6 +44,46 @@ export default function PurchaseOptions({
   const { user } = useAuth();
   const [selected, setSelected] = useState<"buy" | "rent">("buy");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [couponCode, setCouponCode] = useState("");
+  const [discount, setDiscount] = useState(0);
+  const [couponError, setCouponError] = useState("");
+  const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
+
+  const handleCouponValidation = async () => {
+    if (!couponCode.trim()) {
+      setCouponError("Please enter a coupon code");
+      return;
+    }
+
+    setIsValidatingCoupon(true);
+    setCouponError("");
+
+    try {
+      const result = await validateCoupon(couponCode);
+      if (result.isValid) {
+        setDiscount(result.discount);
+        toast({
+          title: "Coupon applied!",
+          description: `${result.discount}% discount applied to your purchase`,
+        });
+      } else {
+        setCouponError(result.message);
+        setDiscount(0);
+      }
+    } catch (error) {
+      setCouponError("Failed to validate coupon");
+      setDiscount(0);
+    } finally {
+      setIsValidatingCoupon(false);
+    }
+  };
+
+  const getCurrentPrice = () => {
+    const basePrice = selected === "buy" ? price : rentPrice || 0;
+    return discount > 0
+      ? calculateDiscountedPrice(basePrice, discount)
+      : basePrice;
+  };
 
   const handlePurchase = async () => {
     if (!user) {
@@ -58,12 +100,16 @@ export default function PurchaseOptions({
 
     // Simulate payment processing
     setTimeout(() => {
+      const finalPrice = getCurrentPrice();
+      const discountText =
+        discount > 0 ? ` (${discount}% discount applied)` : "";
+
       toast({
         title: "Purchase successful",
         description:
           selected === "rent"
-            ? `You have rented "${price}" for ${"48 hours"}`
-            : `You have purchased "${price}"`,
+            ? `You have rented this title for 48 hours at $${finalPrice}${discountText}`
+            : `You have purchased this title for $${finalPrice}${discountText}`,
       });
       setIsProcessing(false);
 
@@ -78,7 +124,36 @@ export default function PurchaseOptions({
         <CardTitle>Watch Options</CardTitle>
         <CardDescription>Rent or buy to start watching now</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-6">
+        {/* Add coupon section */}
+        <div className="space-y-2">
+          <Label htmlFor="coupon">Have a coupon code?</Label>
+          <div className="flex gap-2">
+            <Input
+              id="coupon"
+              placeholder="Enter coupon code"
+              value={couponCode}
+              onChange={(e) => setCouponCode(e.target.value)}
+              disabled={isValidatingCoupon || isProcessing}
+            />
+            <Button
+              variant="outline"
+              onClick={handleCouponValidation}
+              disabled={isValidatingCoupon || isProcessing}
+            >
+              Apply
+            </Button>
+          </div>
+          {couponError && (
+            <p className="text-sm text-destructive">{couponError}</p>
+          )}
+          {discount > 0 && (
+            <p className="text-sm text-green-600">
+              {discount}% discount applied!
+            </p>
+          )}
+        </div>
+
         <RadioGroup
           value={selected}
           onValueChange={(value) => setSelected(value as "rent" | "buy")}
@@ -92,7 +167,14 @@ export default function PurchaseOptions({
                   <Clock className="h-4 w-4 text-muted-foreground" />
                   <span>Rent</span>
                 </div>
-                <div className="font-semibold">${rentPrice}</div>
+                <div className="flex flex-col items-end">
+                  {discount > 0 && (
+                    <span className="text-sm line-through text-muted-foreground">
+                      ${rentPrice}
+                    </span>
+                  )}
+                  <div className="font-semibold">${getCurrentPrice()}</div>
+                </div>
               </div>
               <p className="text-sm text-muted-foreground mt-1">
                 Available for 48 hour after starting

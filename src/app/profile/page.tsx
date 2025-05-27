@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuth } from "@/lib/use-auth";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
@@ -170,9 +171,11 @@ function MovieListItem({
 }) {
   return (
     <div className="flex items-center gap-4 p-2 rounded-lg hover:bg-zinc-800 transition group cursor-pointer">
-      <img
+      <Image
         src={movie.posterUrl || "/placeholder.svg?height=80&width=56"}
         alt={movie.title}
+        width={56}
+        height={80}
         className="w-14 h-20 object-cover rounded shadow border border-zinc-700 bg-zinc-800 group-hover:scale-105 transition"
       />
       <div>

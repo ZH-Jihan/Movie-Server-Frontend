@@ -1,6 +1,6 @@
 "use server";
 
-import { API_BASE_URL} from "@/lib/api";
+import { API_BASE_URL } from "@/lib/api";
 import { cookies } from "next/headers";
 
 export interface LoginData {
@@ -87,11 +87,11 @@ export async function getCurrentUser() {
 
     if (tokenData) {
       return {
-      id: tokenData.id,
-      email: tokenData.email,
-      name: tokenData.name,
-      isAdmin: tokenData.role === "ADMIN" || false,
-    };
+        id: tokenData.id,
+        email: tokenData.email,
+        name: tokenData.name,
+        isAdmin: tokenData.role === "ADMIN" || false,
+      };
     }
   } catch (error) {
     throw error;
@@ -100,7 +100,6 @@ export async function getCurrentUser() {
 
 export async function logout() {
   try {
-
     // Delete the authentication token cookie
     const cookieStore = await cookies();
     cookieStore.delete("token");

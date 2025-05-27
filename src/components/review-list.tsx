@@ -59,7 +59,7 @@ export default function ReviewList({ mediaId, mediaType }: ReviewListProps) {
       setLoading(true);
       try {
         const data = await getReviewsByMediaId(mediaId, async () => {
-          await signOut();
+          signOut();
           router.push("/login");
         });
         setReviews(data);

@@ -7,9 +7,10 @@ import Link from "next/link";
 
 interface MediaGridProps {
   items: MediaItem[];
+  ratings: Record<string, number>;
 }
 
-export default function MediaGrid({ items }: MediaGridProps) {
+export default function MediaGrid({ items, ratings }: MediaGridProps) {
   return (
     <div className="overflow-x-auto">
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
@@ -33,7 +34,7 @@ export default function MediaGrid({ items }: MediaGridProps) {
                 </div>
                 <div className="absolute top-2 right-2 flex items-center gap-1 bg-black/60 text-white text-xs px-2 py-1 rounded-md">
                   <Star className="h-3 w-3 fill-yellow-500 text-yellow-500" />
-                  <span>{5.0}</span>
+                  <span>{ratings[item.id] ?? 0}</span>
                 </div>
                 <Badge
                   variant="secondary"
@@ -44,7 +45,9 @@ export default function MediaGrid({ items }: MediaGridProps) {
               </CardContent>
               <div className="p-3">
                 <h3 className="font-medium line-clamp-1">{item.title}</h3>
-                <p className="text-xs text-muted-foreground">{item.releaseYear}</p>
+                <p className="text-xs text-muted-foreground">
+                  {item.releaseYear}
+                </p>
               </div>
             </Card>
           </Link>

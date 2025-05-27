@@ -1,8 +1,28 @@
-import { Comment, Review, ReviewLike } from "@/interfaces/review";
+import {
+  Comment,
+  Review,
+  ReviewLike,
+  TPandingReview,
+} from "@/interfaces/review";
 import { API_BASE_URL } from "@/lib/api";
 import { apiFetch } from "@/lib/fetcher";
 import { token } from "../auth";
 
+export async function getAllReviews(
+  onJwtExpired?: () => void
+): Promise<TPandingReview[]> {
+  const tkn = await token();
+  return apiFetch(`${API_BASE_URL}/review`, {
+    headers: {
+      Authorization: `Bearer ${tkn?.value}`,
+    },
+    onJwtExpired,
+  }).then((data) => {
+    if (Array.isArray(data)) return data;
+    if (Array.isArray(data.data)) return data.data;
+    return [];
+  });
+}
 export async function getReviewsByMediaId(
   mediaId: string,
   onJwtExpired?: () => void

@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { BarChart, LineChart } from "@/components/ui/chart";
+import { BarChart, LineChart } from "@/components/ui/chart-components";
 import { Input } from "@/components/ui/input";
 import {
   Table,
@@ -20,13 +20,15 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useAuth } from "@/lib/use-auth";
+import { MediaItem } from "@/interfaces/media-item";
+import { TPandingReview } from "@/interfaces/review";
+import { getAllMedia } from "@/services/media";
+import { getAllReviews } from "@/services/review";
 import {
   CheckCircle,
   DollarSign,
   Edit,
   Film,
-  Plus,
   Search,
   Star,
   Trash,
@@ -34,45 +36,82 @@ import {
   Users,
   XCircle,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function AdminDashboard() {
-  const router = useRouter();
-  const { user, isAdmin } = useAuth();
+  const [media, setMedia] = useState<MediaItem[]>([]);
+  const [reviews, setReviews] = useState<TPandingReview[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const ratings: { [key: string]: number } = {};
 
-  // Redirect if not admin
-  if (!user || !isAdmin) {
-    router.push("/login");
-    return null;
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const [mediaData, reviewData] = await Promise.all([
+          getAllMedia({}),
+          getAllReviews(),
+        ]);
+
+        setMedia(
+          mediaData.data.map((item) => ({
+            ...item,
+            type: item.type === "MOVIE" ? "movie" : "series",
+            purchaseOptions: {
+              rent: {
+                price: item.purchaseOptions?.rent?.price || 0,
+                duration: item.purchaseOptions?.rent?.duration || "N/A",
+              },
+              buy: {
+                price: item.purchaseOptions?.buy?.price || 0,
+              },
+            },
+          }))
+        );
+
+        setReviews(reviewData);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchData();
+  }, []);
+
+  console.log("Reviews:", reviews);
+
+  if (loading) {
+    return <div>Loading...</div>;
   }
 
   // Mock data for charts
   const salesData = [
     {
       name: "Jan",
-      total: 1200,
+      total: 0,
     },
     {
       name: "Feb",
-      total: 1800,
+      total: 10,
     },
     {
       name: "Mar",
-      total: 2200,
+      total: 15,
     },
     {
       name: "Apr",
-      total: 2600,
+      total: 0,
     },
     {
       name: "May",
-      total: 3200,
+      total: 7,
     },
     {
       name: "Jun",
-      total: 3800,
+      total: 30,
     },
   ];
 
@@ -126,65 +165,10 @@ export default function AdminDashboard() {
     },
   ];
 
-  // Mock data for media library
-  const mediaLibrary = [
-    {
-      id: "movie1",
-      title: "Inception",
-      type: "Movie",
-      year: 2010,
-      rating: 8.8,
-      purchases: 245,
-      rentals: 520,
-    },
-    {
-      id: "series1",
-      title: "Breaking Bad",
-      type: "TV Series",
-      year: 2008,
-      rating: 9.5,
-      purchases: 320,
-      rentals: 680,
-    },
-    {
-      id: "movie2",
-      title: "The Dark Knight",
-      type: "Movie",
-      year: 2008,
-      rating: 9.0,
-      purchases: 310,
-      rentals: 590,
-    },
-    {
-      id: "series2",
-      title: "Game of Thrones",
-      type: "TV Series",
-      year: 2011,
-      rating: 9.2,
-      purchases: 420,
-      rentals: 780,
-    },
-    {
-      id: "movie3",
-      title: "Pulp Fiction",
-      type: "Movie",
-      year: 1994,
-      rating: 8.9,
-      purchases: 280,
-      rentals: 450,
-    },
-  ];
-
   return (
     <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
         <h1 className="text-2xl sm:text-3xl font-bold">Admin Dashboard</h1>
-        <Button
-          className="w-full sm:w-auto"
-          onClick={() => router.push("/admin/movie-post")}
-        >
-          <Plus className="mr-2 h-4 w-4" /> Add New Title
-        </Button>
       </div>
 
       {/* Stats Cards */}
@@ -198,7 +182,9 @@ export default function AdminDashboard() {
               <p className="text-sm font-medium text-muted-foreground">
                 Total Movies
               </p>
-              <h3 className="text-2xl font-bold">1,248</h3>
+              <h3 className="text-2xl font-bold">
+                {media.filter((i) => i.type === "movie").length}
+              </h3>
             </div>
           </CardContent>
         </Card>
@@ -212,7 +198,9 @@ export default function AdminDashboard() {
               <p className="text-sm font-medium text-muted-foreground">
                 Total Series
               </p>
-              <h3 className="text-2xl font-bold">342</h3>
+              <h3 className="text-2xl font-bold">
+                {media.filter((i) => i.type === "series").length}
+              </h3>
             </div>
           </CardContent>
         </Card>
@@ -328,7 +316,7 @@ export default function AdminDashboard() {
                   <Input
                     placeholder="Search titles..."
                     className="pl-10 w-full"
-                    value={searchQuery}
+                    value={search}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
                 </div>
@@ -352,7 +340,7 @@ export default function AdminDashboard() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {mediaLibrary.map((item) => (
+                    {media.map((item) => (
                       <TableRow key={item.id}>
                         <TableCell className="font-medium">
                           {item.title}
@@ -360,15 +348,15 @@ export default function AdminDashboard() {
                         <TableCell>
                           <Badge variant="outline">{item.type}</Badge>
                         </TableCell>
-                        <TableCell>{item.year}</TableCell>
+                        <TableCell>{item.releaseYear}</TableCell>
                         <TableCell>
                           <div className="flex items-center">
                             <Star className="h-4 w-4 fill-yellow-500 text-yellow-500 mr-1" />
-                            <span>{item.rating.toFixed(1)}</span>
+                            <span>{ratings[item.id]}</span>
                           </div>
                         </TableCell>
-                        <TableCell>{item.purchases}</TableCell>
-                        <TableCell>{item.rentals}</TableCell>
+                        <TableCell>{item.price}</TableCell>
+                        <TableCell>{"N/A"}</TableCell>
                         <TableCell>
                           <div className="flex gap-2">
                             <Button variant="ghost" size="icon">
@@ -397,13 +385,13 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
-                {pendingReviews.map((review) => (
+                {reviews.map((review) => (
                   <div key={review.id} className="border rounded-lg p-4">
                     <div className="flex justify-between items-start mb-2">
                       <div>
-                        <h3 className="font-semibold">{review.title}</h3>
+                        <h3 className="font-semibold">{review.media.title}</h3>
                         <p className="text-sm text-muted-foreground">
-                          By {review.user} on {review.date}
+                          By {review.user.name} on {review.createdAt}
                         </p>
                       </div>
                       <div className="flex items-center">
@@ -411,7 +399,7 @@ export default function AdminDashboard() {
                         <span className="font-medium">{review.rating}/10</span>
                       </div>
                     </div>
-                    <p className="text-sm mb-4">{review.content}</p>
+                    <p className="text-sm mb-4">{review.text}</p>
                     <div className="flex justify-end gap-2">
                       <Button variant="outline" size="sm" className="gap-1">
                         <XCircle className="h-4 w-4" /> Reject

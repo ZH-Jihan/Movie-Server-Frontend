@@ -8,8 +8,9 @@ import { Textarea } from "@/components/ui/textarea";
 import type { MovieFormState } from "@/interfaces/movie-form";
 import { useAuth } from "@/lib/use-auth";
 import { uploadMedia } from "@/services/media";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useRef, useState, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const GENRES = [
   "Action",
@@ -363,9 +364,11 @@ export default function MoviePostPage() {
           />
           {imageFile && (
             <div className="mt-2 flex items-center gap-4">
-              <img
+              <Image
                 src={URL.createObjectURL(imageFile)}
                 alt="Preview"
+                width={160}
+                height={160}
                 className="max-h-40 rounded"
               />
               <button
@@ -385,7 +388,13 @@ export default function MoviePostPage() {
           )}
           {imageUrl && !imageFile && (
             <div className="mt-2 flex items-center gap-4">
-              <img src={imageUrl} alt="Preview" className="max-h-40 rounded" />
+              <Image
+                src={imageUrl}
+                alt="Preview"
+                width={160}
+                height={160}
+                className="max-h-40 rounded"
+              />
               <button
                 type="button"
                 onClick={() => setImageUrl("")}

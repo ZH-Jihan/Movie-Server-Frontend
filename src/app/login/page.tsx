@@ -23,7 +23,7 @@ import { useAuth } from "@/lib/use-auth";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Film } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -38,8 +38,10 @@ const formSchema = z.object({
 export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { signIn } = useAuth();
+  const { signIn, isAdmin } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl");
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -49,16 +51,31 @@ export default function LoginPage() {
     },
   });
 
+  const handleDemoUser = () => {
+    form.setValue("email", "demo@gmail.com");
+    form.setValue("password", "demo123");
+  };
+
+  const handleDemoAdmin = () => {
+    form.setValue("email", "admin@example.com");
+    form.setValue("password", "admin123");
+  };
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     try {
-      const res = await signIn(values.email, values.password);    
+      const res = await signIn(values.email, values.password);
       if (res.data) {
+        // Handle redirect
+        if (callbackUrl) {
+          router.push(callbackUrl);
+        } else {
+          router.push(isAdmin ? "/admin/dashboard" : "/user/dashboard");
+        }
         toast({
           title: "Success",
           description: "You have successfully logged in",
         });
-        router.push("/profile");
       }
     } catch (error) {
       toast({
@@ -88,6 +105,40 @@ export default function LoginPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          <div className="mb-6">
+            <h3 className="text-sm font-medium text-muted-foreground text-center mb-2">
+              👋 Quick Demo Access
+            </h3>
+            <p className="text-xs text-center text-muted-foreground mb-3">
+              For testing purposes, click below to auto-fill credentials
+            </p>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={handleDemoUser}
+                disabled={isLoading}
+              >
+                Demo User
+                {/* <span className="text-xs block text-muted-foreground">
+                  Regular access
+                </span> */}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={handleDemoAdmin}
+                disabled={isLoading}
+              >
+                Demo Admin
+                {/* <span className="text-xs block text-muted-foreground">
+                  Full access
+                </span> */}
+              </Button>
+            </div>
+          </div>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField

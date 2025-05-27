@@ -38,7 +38,6 @@ interface MediaResponse {
 
 export async function getAllMedia(query: MediaQuery): Promise<MediaResponse> {
   try {
-    const tkn = await token();
     const queryString = new URLSearchParams(
       Object.entries(query).reduce((acc, [key, value]) => {
         if (value !== undefined && value !== null) {
@@ -49,6 +48,23 @@ export async function getAllMedia(query: MediaQuery): Promise<MediaResponse> {
     ).toString();
     const response = await fetch(`${API_BASE_URL}/media?${queryString}`, {
       method: "GET",
+      next: {
+        revalidate: 3600,
+      },
+    });
+
+    return await response.json();
+  } catch (error) {
+    throw error;
+  }
+}
+export async function getTopRated(): Promise<MediaResponse> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/media/features`, {
+      method: "GET",
+      next: {
+        revalidate: 3600,
+      },
     });
 
     return await response.json();
@@ -75,4 +91,16 @@ export async function getMediaById(id: string): Promise<{
   } catch (error) {
     throw error;
   }
+}
+
+export async function getRating(id: string) {
+  let rating = 0;
+  const media = async () => {
+    const { data } = await getMediaById(id);
+    rating = data?.avgRating || 0;
+  };
+  media().catch((error) => {
+    console.error("Error fetching media rating:", error);
+  });
+  return rating;
 }
