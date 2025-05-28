@@ -2,6 +2,7 @@
 
 import Footer from "@/components/footer";
 import Header from "@/components/header";
+import StripeProvider from "@/components/StripeProvider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/lib/auth-provider";
@@ -32,11 +33,13 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <AuthProvider>
-            {!isDashboard && <Header />}
-            <main className="flex-1">{children}</main>
-            {!isDashboard && <Footer />}
-            <Toaster />
-            <Analytics />
+            <StripeProvider>
+              {!isDashboard && <Header />}
+              <main className="flex-1">{children}</main>
+              {!isDashboard && <Footer />}
+              <Toaster />
+              <Analytics />
+            </StripeProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

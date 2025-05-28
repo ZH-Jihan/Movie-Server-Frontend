@@ -1,3 +1,4 @@
+"use client";
 import MediaGrid from "@/components/media-grid";
 import PurchaseOptions from "@/components/purchase-options";
 import ReviewList from "@/components/review-list";
@@ -10,38 +11,65 @@ import { getAllMedia, getMediaById } from "@/services/media";
 import { Calendar, Clock, Play, Plus, Star, Tag, Users } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 interface CommonDetailsPageProps {
   id: string;
   type: "MOVIE" | "SERIES";
 }
 
-export default async function CommonDetailsPage({
+function getEmbedUrl(url: string) {
+  if (!url) return "";
+  // If already in embed format, return as is
+  if (url.includes("youtube.com/embed/")) return url;
+  // Extract video ID from various YouTube URL formats
+  const match = url.match(
+    /(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/
+  );
+  if (match && match[1]) {
+    return `https://www.youtube.com/embed/${match[1]}`;
+  }
+  return url; // fallback
+}
+
+export default function CommonDetailsPage({
   id,
   type,
 }: CommonDetailsPageProps) {
-  const { data } = await getMediaById(id);
-  const media = data.media;
-  const { data: relatedMedia } = media.type
-    ? await getAllMedia({ type: media?.type })
-    : { data: [] };
+  const [media, setMedia] = useState<any>(null);
+  const [relatedMedia, setRelatedMedia] = useState<any[]>([]);
+  const [ratings, setRatings] = useState<{ [key: string]: any }>({});
+  const [showTrailer, setShowTrailer] = useState(false);
+
+  useEffect(() => {
+    async function fetchData() {
+      const { data } = await getMediaById(id);
+      setMedia(data.media);
+      if (data.media?.type) {
+        const { data: rel } = await getAllMedia({ type: data.media.type });
+        setRelatedMedia(rel);
+        // Fetch ratings for related media
+        const ratingsObj: { [key: string]: any } = {};
+        for (const item of rel) {
+          ratingsObj[item.id] = await findRating(item.id);
+        }
+        setRatings(ratingsObj);
+      }
+    }
+    fetchData();
+  }, [id]);
 
   if (!media) {
     return <div>{type === "MOVIE" ? "Movie" : "Series"} not found</div>;
-  }
-
-  const ratings: { [key: string]: any } = {};
-  for (const item of relatedMedia) {
-    ratings[item.id] = await findRating(item.id);
   }
 
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Hero Section */}
       <div className="relative h-[400px] md:h-[500px] mb-8 rounded-xl overflow-hidden shadow-lg">
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent z-10" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-transparent z-10" />
         <Image
-          src={"/placeholder.svg"}
+          src={media?.coverImage || "/placeholder.svg"}
           alt={media?.title || "Media background"}
           fill
           className="object-cover"
@@ -96,6 +124,16 @@ export default async function CommonDetailsPage({
                 >
                   <Play className="h-5 w-5" /> Watch Now
                 </Button>
+                {media.trailerUrl && (
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="gap-3 border-gray-300 text-gray-300 hover:border-white hover:text-white px-6 py-3 rounded-lg"
+                    onClick={() => setShowTrailer(true)}
+                  >
+                    <Play className="h-5 w-5" /> Watch Trailer
+                  </Button>
+                )}
                 <Button
                   size="lg"
                   variant="outline"
@@ -104,6 +142,29 @@ export default async function CommonDetailsPage({
                   <Plus className="h-5 w-5" /> Add to Watchlist
                 </Button>
               </div>
+              {showTrailer && media.trailerUrl && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
+                  <div className="relative w-full max-w-3xl aspect-video">
+                    <button
+                      className="absolute top-2 right-2 z-10 bg-black/60 text-white rounded-full p-2"
+                      onClick={() => setShowTrailer(false)}
+                    >
+                      ✕
+                    </button>
+                    <iframe
+                      src={getEmbedUrl(media.trailerUrl)}
+                      title="Trailer"
+                      allow="autoplay; encrypted-media; fullscreen"
+                      allowFullScreen
+                      className="w-full h-full rounded-lg"
+                    />
+                    <div className="mt-2 text-center text-sm text-gray-300 bg-black/60 rounded p-2">
+                      If the video does not play, please disable any ad blocker
+                      or privacy extension and try again.
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -125,7 +186,24 @@ export default async function CommonDetailsPage({
                   <h2 className="text-xl font-semibold mb-3">Synopsis</h2>
                   <p className="text-muted-foreground">{media.description}</p>
                 </div>
-
+                {/* Screenshots Gallery */}
+                {media.screenshots && media.screenshots.length > 0 && (
+                  <div>
+                    <h2 className="text-xl font-semibold mb-3">Screenshots</h2>
+                    <div className="flex flex-wrap gap-4">
+                      {media.screenshots.map((url: string, idx: number) => (
+                        <Image
+                          key={idx}
+                          src={url}
+                          alt={`Screenshot ${idx + 1}`}
+                          width={220}
+                          height={140}
+                          className="rounded shadow-md object-cover"
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="space-y-1">
                     <div className="text-sm text-muted-foreground flex items-center gap-1">
@@ -173,7 +251,11 @@ export default async function CommonDetailsPage({
         </div>
 
         <div>
-          <PurchaseOptions price={media.price} rentPrice={2.99} />
+          <PurchaseOptions
+            price={media.price}
+            rentPrice={media.rentPrice}
+            mediaId={media.id}
+          />
         </div>
       </div>
 

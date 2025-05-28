@@ -11,4 +11,7 @@ export interface MovieFormState {
   drmProtected: boolean;
   isPublished: boolean;
   image?: string;
-} 
+  trailerUrl?: string;
+  coverImage?: string;
+  screenshots?: string[];
+}

@@ -14,6 +14,9 @@ export interface MediaItem {
   isPublished: boolean;
   createdAt: string;
   updatedAt: string;
+  screenshots: string[];
+  coverImage: string;
+  trailerUrl: string;
   purchaseOptions?: {
     rent?: {
       price: number;

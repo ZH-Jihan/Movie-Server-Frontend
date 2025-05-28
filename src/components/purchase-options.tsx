@@ -14,6 +14,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/use-auth";
 import { calculateDiscountedPrice, validateCoupon } from "@/services/coupon";
+import { createPurchase } from "@/services/purchase";
+import { CardElement, useElements, useStripe } from "@stripe/react-stripe-js";
 import { Clock, Download, ShoppingCart } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -23,12 +25,14 @@ import { Input } from "./ui/input";
  * PurchaseOptions: Displays purchase and rental options for a media item.
  * @param price - The price for buying the media
  * @param rentPrice - The price for renting the media
+ * @param mediaId - The ID of the media
  * @param onPurchase - Callback when purchase is made
  * @param onRent - Callback when rent is made
  */
 interface PurchaseOptionsProps {
   price: number;
   rentPrice?: number;
+  mediaId: string;
   onPurchase?: () => void;
   onRent?: () => void;
 }
@@ -36,6 +40,7 @@ interface PurchaseOptionsProps {
 export default function PurchaseOptions({
   price,
   rentPrice,
+  mediaId,
   onPurchase,
   onRent,
 }: PurchaseOptionsProps) {
@@ -48,6 +53,8 @@ export default function PurchaseOptions({
   const [discount, setDiscount] = useState(0);
   const [couponError, setCouponError] = useState("");
   const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
+  const stripe = useStripe();
+  const elements = useElements();
 
   const handleCouponValidation = async () => {
     if (!couponCode.trim()) {
@@ -95,27 +102,44 @@ export default function PurchaseOptions({
       router.push("/login");
       return;
     }
-
+    if (!stripe || !elements) return;
     setIsProcessing(true);
-
-    // Simulate payment processing
-    setTimeout(() => {
-      const finalPrice = getCurrentPrice();
-      const discountText =
-        discount > 0 ? ` (${discount}% discount applied)` : "";
-
+    const cardElement = elements.getElement(CardElement);
+    const { paymentMethod, error } = await stripe.createPaymentMethod({
+      type: "card",
+      card: cardElement!,
+    });
+    if (error || !paymentMethod) {
       toast({
-        title: "Purchase successful",
-        description:
-          selected === "rent"
-            ? `You have rented this title for 48 hours at $${finalPrice}${discountText}`
-            : `You have purchased this title for $${finalPrice}${discountText}`,
+        title: "Payment error",
+        description: error?.message,
+        variant: "destructive",
       });
       setIsProcessing(false);
-
-      // In a real app, redirect to the streaming page
-      // router.push(`/watch/${media.id}`);
-    }, 1500);
+      return;
+    }
+    try {
+      const res = await createPurchase({
+        userId: user.id,
+        mediaId,
+        type: selected.toUpperCase() as "RENT" | "BUY",
+        price: getCurrentPrice(),
+        paymentMethodId: paymentMethod.id,
+      });
+      toast({
+        title: "Purchase successful",
+        description: "You can now watch your movie!",
+      });
+      if (onPurchase) onPurchase();
+    } catch (err: any) {
+      toast({
+        title: "Purchase failed",
+        description: err.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (
@@ -198,12 +222,16 @@ export default function PurchaseOptions({
             </Label>
           </div>
         </RadioGroup>
+
+        <div className="my-4">
+          <CardElement options={{ hidePostalCode: true }} />
+        </div>
       </CardContent>
       <CardFooter>
         <Button
           className="w-full gap-2"
           onClick={handlePurchase}
-          disabled={isProcessing}
+          disabled={isProcessing || !stripe || !elements}
         >
           <ShoppingCart className="h-4 w-4" />
           {isProcessing

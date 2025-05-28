@@ -20,10 +20,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/components/ui/use-toast";
 import { MediaItem } from "@/interfaces/media-item";
 import { TPandingReview } from "@/interfaces/review";
 import { getAllMedia } from "@/services/media";
-import { getAllReviews } from "@/services/review";
+import { acceptReview, getAllReviews } from "@/services/review";
 import {
   CheckCircle,
   DollarSign,
@@ -37,11 +38,58 @@ import {
   XCircle,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+// Mock data for charts
+const salesData = [
+  {
+    name: "Jan",
+    total: 0,
+  },
+  {
+    name: "Feb",
+    total: 10,
+  },
+  {
+    name: "Mar",
+    total: 15,
+  },
+  {
+    name: "Apr",
+    total: 0,
+  },
+  {
+    name: "May",
+    total: 7,
+  },
+  {
+    name: "Jun",
+    total: 30,
+  },
+];
+
+const userActivityData = [
+  {
+    name: "Reviews",
+    value: 420,
+  },
+  {
+    name: "Ratings",
+    value: 980,
+  },
+  {
+    name: "Comments",
+    value: 350,
+  },
+  {
+    name: "Purchases",
+    value: 520,
+  },
+];
 
 export default function AdminDashboard() {
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [reviews, setReviews] = useState<TPandingReview[]>([]);
   const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
   const [search, setSearch] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const ratings: { [key: string]: number } = {};
@@ -81,89 +129,21 @@ export default function AdminDashboard() {
     fetchData();
   }, []);
 
-  console.log("Reviews:", reviews);
+  const handleAcceptReview = async (reviewId: string) => {
+    const response = await acceptReview(reviewId);
+    console.log("Accepting review response:", response);
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-
-  // Mock data for charts
-  const salesData = [
-    {
-      name: "Jan",
-      total: 0,
-    },
-    {
-      name: "Feb",
-      total: 10,
-    },
-    {
-      name: "Mar",
-      total: 15,
-    },
-    {
-      name: "Apr",
-      total: 0,
-    },
-    {
-      name: "May",
-      total: 7,
-    },
-    {
-      name: "Jun",
-      total: 30,
-    },
-  ];
-
-  const userActivityData = [
-    {
-      name: "Reviews",
-      value: 420,
-    },
-    {
-      name: "Ratings",
-      value: 980,
-    },
-    {
-      name: "Comments",
-      value: 350,
-    },
-    {
-      name: "Purchases",
-      value: 520,
-    },
-  ];
-
-  // Mock data for pending reviews
-  const pendingReviews = [
-    {
-      id: "review1",
-      user: "John Doe",
-      title: "Inception",
-      rating: 9,
-      content:
-        "This movie blew my mind with its complex storyline and amazing visuals.",
-      date: "2023-05-15",
-    },
-    {
-      id: "review2",
-      user: "Jane Smith",
-      title: "The Dark Knight",
-      rating: 10,
-      content:
-        "Heath Ledger's performance as the Joker was absolutely incredible.",
-      date: "2023-05-14",
-    },
-    {
-      id: "review3",
-      user: "Mike Johnson",
-      title: "Interstellar",
-      rating: 8,
-      content:
-        "The science was fascinating, but some parts were a bit confusing.",
-      date: "2023-05-13",
-    },
-  ];
+    if (response.success) {
+      toast({
+        title: "Review Accepted",
+        description: "The review has been successfully accepted.",
+        variant: "default",
+      });
+      setReviews((prev) => prev.filter((review) => review.id !== reviewId));
+    } else {
+      console.error("Failed to accept review:", response.message);
+    }
+  };
 
   return (
     <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8">
@@ -404,7 +384,11 @@ export default function AdminDashboard() {
                       <Button variant="outline" size="sm" className="gap-1">
                         <XCircle className="h-4 w-4" /> Reject
                       </Button>
-                      <Button size="sm" className="gap-1">
+                      <Button
+                        onClick={() => handleAcceptReview(review.id)}
+                        size="sm"
+                        className="gap-1"
+                      >
                         <CheckCircle className="h-4 w-4" /> Approve
                       </Button>
                     </div>

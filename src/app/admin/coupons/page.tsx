@@ -18,7 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ColumnDef } from "@tanstack/react-table";
 import { useState } from "react";
 
-interface CouponData {
+export interface CouponData {
   id: string;
   code: string;
   discount: number;

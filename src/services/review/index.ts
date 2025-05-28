@@ -101,3 +101,17 @@ export async function postComment(
     onJwtExpired,
   });
 }
+
+export async function acceptReview(
+  reviewId: string,
+  onJwtExpired?: () => void
+): Promise<{ success: boolean; message: string; data: TPandingReview }> {
+  const tkn = await token();
+  return apiFetch(`${API_BASE_URL}/review/${reviewId}/approve`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${tkn?.value}`,
+    },
+    onJwtExpired,
+  });
+}

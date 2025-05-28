@@ -45,13 +45,22 @@ export default function MoviePostPage() {
     streamingLink: "",
     drmProtected: false,
     isPublished: false,
+    trailerUrl: "",
+    coverImage: "",
+    screenshots: [],
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imageUrl, setImageUrl] = useState<string>("");
+  const [coverImageFile, setCoverImageFile] = useState<File | null>(null);
+  const [coverImageUrl, setCoverImageUrl] = useState<string>("");
+  const [screenshots, setScreenshots] = useState<File[]>([]);
+  const [screenshotUrls, setScreenshotUrls] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const coverInputRef = useRef<HTMLInputElement | null>(null);
+  const screenshotsInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     if (!isAdmin) {
@@ -112,17 +121,31 @@ export default function MoviePostPage() {
         uploadedImageUrl = await uploadImage(imageFile);
         setImageUrl(uploadedImageUrl);
       }
-
+      let uploadedCoverUrl = coverImageUrl;
+      if (coverImageFile) {
+        uploadedCoverUrl = await uploadImage(coverImageFile);
+        setCoverImageUrl(uploadedCoverUrl);
+      }
+      let uploadedScreenshotUrls: string[] = [];
+      if (screenshots.length > 0) {
+        uploadedScreenshotUrls = await Promise.all(
+          screenshots.map(uploadImage)
+        );
+        setScreenshotUrls(uploadedScreenshotUrls);
+      }
       fromdata.append("file", imageFile as Blob);
-
+      if (coverImageFile) fromdata.append("coverImage", coverImageFile as Blob);
+      screenshots.forEach((file) => fromdata.append("screenshots", file));
       const movieData = {
         ...form,
         releaseYear: Number(form.releaseYear),
         duration: Number(form.duration),
         price: Number(form.price),
         rentPrice: Number(form.rentPrice),
+        trailerUrl: form.trailerUrl,
+        coverImage: uploadedCoverUrl,
+        screenshots: uploadedScreenshotUrls,
       };
-
       fromdata.append("data", JSON.stringify(movieData));
       const res = await uploadMedia(fromdata);
       console.log(res);
@@ -142,9 +165,16 @@ export default function MoviePostPage() {
         streamingLink: "",
         drmProtected: false,
         isPublished: false,
+        trailerUrl: "",
+        coverImage: "",
+        screenshots: [],
       });
       setImageFile(null);
       setImageUrl("");
+      setCoverImageFile(null);
+      setCoverImageUrl("");
+      setScreenshots([]);
+      setScreenshotUrls([]);
       setSuccess("Movie posted successfully!");
     } catch (err: any) {
       setError(err.message);
@@ -340,7 +370,7 @@ export default function MoviePostPage() {
             className="mt-1 w-full"
           />
         </div>
-        {/* Image Upload */}
+        {/* Poster Image Upload */}
         <div>
           <Label
             htmlFor="image"
@@ -352,7 +382,7 @@ export default function MoviePostPage() {
             id="image"
             name="image"
             type="file"
-            accept={"image/*"}
+            accept="image/*"
             ref={fileInputRef}
             onChange={(e) => {
               if (e.target.files && e.target.files[0]) {
@@ -366,7 +396,7 @@ export default function MoviePostPage() {
             <div className="mt-2 flex items-center gap-4">
               <Image
                 src={URL.createObjectURL(imageFile)}
-                alt="Preview"
+                alt="Poster Preview"
                 width={160}
                 height={160}
                 className="max-h-40 rounded"
@@ -376,9 +406,7 @@ export default function MoviePostPage() {
                 onClick={() => {
                   setImageFile(null);
                   setImageUrl("");
-                  if (fileInputRef.current) {
-                    fileInputRef.current.value = "";
-                  }
+                  if (fileInputRef.current) fileInputRef.current.value = "";
                 }}
                 className="px-3 py-1 bg-red-500 text-white rounded"
               >
@@ -390,7 +418,7 @@ export default function MoviePostPage() {
             <div className="mt-2 flex items-center gap-4">
               <Image
                 src={imageUrl}
-                alt="Preview"
+                alt="Poster Preview"
                 width={160}
                 height={160}
                 className="max-h-40 rounded"
@@ -402,6 +430,139 @@ export default function MoviePostPage() {
               >
                 Remove
               </button>
+            </div>
+          )}
+        </div>
+        {/* Trailer URL */}
+        <div>
+          <Label
+            htmlFor="trailerUrl"
+            className="text-base font-medium text-foreground"
+          >
+            Trailer URL
+          </Label>
+          <Input
+            id="trailerUrl"
+            name="trailerUrl"
+            value={form.trailerUrl || ""}
+            onChange={handleChange}
+            className="mt-1 w-full"
+            placeholder="https://youtube.com/..."
+          />
+        </div>
+        {/* Cover Image Upload */}
+        <div>
+          <Label
+            htmlFor="coverImage"
+            className="text-base font-medium text-foreground"
+          >
+            Cover Image
+          </Label>
+          <Input
+            id="coverImage"
+            name="coverImage"
+            type="file"
+            accept="image/*"
+            ref={coverInputRef}
+            onChange={(e) => {
+              if (e.target.files && e.target.files[0]) {
+                setCoverImageFile(e.target.files[0]);
+                setCoverImageUrl("");
+              }
+            }}
+            className="mt-1 w-full"
+          />
+          {coverImageFile && (
+            <div className="mt-2 flex items-center gap-4">
+              <Image
+                src={URL.createObjectURL(coverImageFile)}
+                alt="Cover Preview"
+                width={160}
+                height={90}
+                className="max-h-24 rounded"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  setCoverImageFile(null);
+                  setCoverImageUrl("");
+                  if (coverInputRef.current) coverInputRef.current.value = "";
+                }}
+                className="px-3 py-1 bg-red-500 text-white rounded"
+              >
+                Remove
+              </button>
+            </div>
+          )}
+          {coverImageUrl && !coverImageFile && (
+            <div className="mt-2 flex items-center gap-4">
+              <Image
+                src={coverImageUrl}
+                alt="Cover Preview"
+                width={160}
+                height={90}
+                className="max-h-24 rounded"
+              />
+              <button
+                type="button"
+                onClick={() => setCoverImageUrl("")}
+                className="px-3 py-1 bg-red-500 text-white rounded"
+              >
+                Remove
+              </button>
+            </div>
+          )}
+        </div>
+        {/* Screenshots Upload */}
+        <div>
+          <Label
+            htmlFor="screenshots"
+            className="text-base font-medium text-foreground"
+          >
+            Screenshots
+          </Label>
+          <Input
+            id="screenshots"
+            name="screenshots"
+            type="file"
+            accept="image/*"
+            multiple
+            ref={screenshotsInputRef}
+            onChange={(e) => {
+              if (e.target.files) {
+                setScreenshots(Array.from(e.target.files));
+                setScreenshotUrls([]);
+              }
+            }}
+            className="mt-1 w-full"
+          />
+          {screenshots.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-4">
+              {screenshots.map((file, idx) => (
+                <div key={idx} className="relative">
+                  <Image
+                    src={URL.createObjectURL(file)}
+                    alt={`Screenshot ${idx + 1}`}
+                    width={120}
+                    height={80}
+                    className="rounded"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setScreenshots((prev) =>
+                        prev.filter((_, i) => i !== idx)
+                      );
+                      setScreenshotUrls((prev) =>
+                        prev.filter((_, i) => i !== idx)
+                      );
+                    }}
+                    className="absolute top-0 right-0 bg-red-500 text-white rounded px-2 py-1 text-xs"
+                  >
+                    X
+                  </button>
+                </div>
+              ))}
             </div>
           )}
         </div>

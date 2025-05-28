@@ -47,7 +47,7 @@ export default function FeaturedCarousel({
         >
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent z-10" />
           <Image
-            src={"/placeholder.svg"}
+            src={item.coverImage || "/placeholder.svg"}
             alt={item.title}
             fill
             className="object-cover"
@@ -56,7 +56,7 @@ export default function FeaturedCarousel({
           <div className="absolute bottom-0 left-0 right-0 p-6 md:p-12 z-20">
             <div className="flex items-center gap-2 mb-3">
               <Badge variant="secondary" className="text-xs">
-                {item.type === "movie" ? "Movie" : "TV Series"}
+                {item.type === "MOVIE" ? "Movie" : "TV Series"}
               </Badge>
               <div className="flex items-center text-yellow-500">
                 <Star className="fill-yellow-500 h-4 w-4 mr-1" />
@@ -64,7 +64,7 @@ export default function FeaturedCarousel({
                   {rating[item.id] ?? 0}
                 </span>
               </div>
-              <span className="text-sm text-muted-foreground">
+              <span className="bg-gray-600 text-white px-2 py-1 text-sm rounded-2xl">
                 {item.releaseYear}
               </span>
             </div>

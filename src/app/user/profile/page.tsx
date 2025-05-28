@@ -24,7 +24,7 @@ import { useAuth } from "@/lib/use-auth";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Edit2, Key, User } from "lucide-react";
 import Image from "next/image";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 
@@ -54,6 +54,7 @@ export default function ProfilePage() {
   const { toast } = useToast();
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const profileForm = useForm<z.infer<typeof profileFormSchema>>({
     resolver: zodResolver(profileFormSchema),
@@ -66,6 +67,18 @@ export default function ProfilePage() {
   const passwordForm = useForm<z.infer<typeof passwordFormSchema>>({
     resolver: zodResolver(passwordFormSchema),
   });
+
+  const handleEditPicture = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // TODO: Upload logic here
+      toast({ title: "Selected file", description: file.name });
+    }
+  };
 
   async function onProfileSubmit(values: z.infer<typeof profileFormSchema>) {
     setIsLoading(true);
@@ -136,11 +149,19 @@ export default function ProfilePage() {
                     height={128}
                     className="h-full w-full object-cover"
                   />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    style={{ display: "none" }}
+                  />
                 </div>
                 <Button
                   size="icon"
                   variant="outline"
                   className="absolute bottom-0 right-0 rounded-full"
+                  onClick={handleEditPicture}
                 >
                   <Edit2 className="h-4 w-4" />
                 </Button>
@@ -196,6 +217,7 @@ export default function ProfilePage() {
                       <FormField
                         control={profileForm.control}
                         name="email"
+                        disabled={true}
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Email</FormLabel>

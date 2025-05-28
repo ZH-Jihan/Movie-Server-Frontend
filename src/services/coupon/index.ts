@@ -6,6 +6,14 @@ interface CouponResponse {
   message: string;
 }
 
+export async function createCoupon(coupon: Coupon) {
+  const response = await fetch(`${API_BASE_URL}/api/coupons`, {
+    method: "POST",
+    body: JSON.stringify(coupon),
+  });
+  return response.json();
+}
+
 export async function validateCoupon(code: string): Promise<CouponResponse> {
   try {
     const response = await fetch(

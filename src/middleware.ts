@@ -38,7 +38,11 @@ export default async function middleware(request: NextRequest) {
   console.log("Token:", token);
 
   // Allow public routes
-  if (publicRoutes.includes(pathname)) {
+  if (
+    publicRoutes.includes(pathname) ||
+    pathname.startsWith("/movies") ||
+    pathname.startsWith("/series")
+  ) {
     return NextResponse.next();
   }
 

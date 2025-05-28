@@ -43,17 +43,17 @@ const userMenuItems = [
   },
   {
     title: "My Watchlist",
-    href: "/dashboard/watchlist",
+    href: "/user/watchlist",
     icon: ListChecks,
   },
   {
     title: "Purchase History",
-    href: "/dashboard/purchases",
+    href: "/user/purchases",
     icon: Tag,
   },
   {
     title: "My Profile",
-    href: "/dashboard/profile",
+    href: "/user/profile",
     icon: Users,
   },
 ];
