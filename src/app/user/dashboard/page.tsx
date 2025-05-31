@@ -4,10 +4,12 @@ import { DataTable } from "@/components/dashboard/data-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { getWatchlist } from "@/services/media";
+import { getUserReviews } from "@/services/review";
 import { ColumnDef } from "@tanstack/react-table";
 import { Film, ListChecks, Star, Timer } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   CartesianGrid,
   Legend,
@@ -130,6 +132,25 @@ function StatsCard({ title, value, description, icon }: StatsCardProps) {
 
 export default function DashboardPage() {
   const [activity] = useState<ActivityData[]>(mockData.recentActivity);
+  const [watchlist, setWatchlist] = useState<any[]>([]);
+  const [purchases, setPurchases] = useState<any[]>([]);
+  const [reviews, setReviews] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchWatchlist = async () => {
+      try {
+        const response = await getWatchlist();
+        const reviews = await getUserReviews();
+        setReviews(reviews);
+        setWatchlist(response.data || []);
+      } catch (error) {
+        console.error("Error fetching watchlist:", error);
+        setWatchlist([]);
+      }
+    };
+    fetchWatchlist();
+  }, []);
+  console.log(watchlist);
 
   return (
     <div className="space-y-6">
@@ -143,25 +164,25 @@ export default function DashboardPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatsCard
           title="Movies Watched"
-          value={mockData.stats.watchedMovies}
+          value={0}
           description="Total movies watched"
           icon={<Film className="h-4 w-4 text-muted-foreground" />}
         />
         <StatsCard
           title="Watchlist"
-          value={mockData.stats.watchlist}
+          value={watchlist?.length}
           description="Movies to watch"
           icon={<ListChecks className="h-4 w-4 text-muted-foreground" />}
         />
         <StatsCard
           title="Reviews"
-          value={mockData.stats.reviews}
+          value={reviews?.length}
           description="Reviews written"
           icon={<Star className="h-4 w-4 text-muted-foreground" />}
         />
         <StatsCard
           title="Watch Time"
-          value={`${mockData.stats.watchTime}h`}
+          value={`${0}h`}
           description="Total hours watched"
           icon={<Timer className="h-4 w-4 text-muted-foreground" />}
         />

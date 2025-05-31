@@ -7,18 +7,21 @@ import { getAllMedia, getTopRated } from "@/services/media";
 export const revalidate = 3600;
 
 export default async function Home() {
-  const { data } = await getAllMedia({});
-  const { data: toprated } = await getTopRated();
+  const { data } = await getAllMedia({ limit: 1000 });
 
   // Fetch ratings for all items
   const ratings: { [key: string]: any } = {};
   for (const item of data) {
-    ratings[item.id] = await findRating(item.id);
+    ratings[item?.id] = await findRating(item?.id);
   }
+
+  // Fetch top rated movies
+  const { data: toprated } = await getTopRated();
+
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Hero Section with all movie*/}
-      <HomePage data={data} toprated={toprated} ratings={ratings} />
+      <HomePage ratings={ratings} />
       {/* Genres Section */}
       <section className="mb-12">
         <h2 className="text-2xl font-bold mb-6">Browse by Genre</h2>

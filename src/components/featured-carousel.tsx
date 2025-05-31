@@ -2,10 +2,13 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 import { MediaItem } from "@/interfaces/media-item";
 import { cn } from "@/lib/utils";
+import { addWatchLinst } from "@/services/media";
 import { Play, Plus, Star } from "lucide-react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 interface FeaturedCarouselProps {
@@ -18,7 +21,8 @@ export default function FeaturedCarousel({
   rating,
 }: FeaturedCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
-
+  const router = useRouter();
+  const { toast } = useToast();
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentIndex((prevIndex) => (prevIndex + 1) % items.length);
@@ -32,6 +36,23 @@ export default function FeaturedCarousel({
   };
 
   if (!items.length) return null;
+
+  const handleAddToWatchlist = async (id: string) => {
+    const response = await addWatchLinst(id);
+    console.log(response);
+    if (response.success) {
+      toast({
+        title: "Success",
+        description: response.message,
+      });
+    } else {
+      toast({
+        title: "Error",
+        variant: "destructive",
+        description: response.message,
+      });
+    }
+  };
 
   return (
     <div className="relative h-[500px] md:h-[450px] overflow-hidden rounded-xl">
@@ -83,10 +104,23 @@ export default function FeaturedCarousel({
               ))}
             </div>
             <div className="flex flex-wrap gap-3">
-              <Button size="lg" className="gap-2">
+              <Button
+                onClick={() =>
+                  router.push(
+                    `/${item.type === "MOVIE" ? "movies" : "series"}/${item.id}`
+                  )
+                }
+                size="lg"
+                className="gap-2"
+              >
                 <Play className="h-4 w-4" /> Watch Now
               </Button>
-              <Button size="lg" variant="outline" className="gap-2">
+              <Button
+                size="lg"
+                variant="outline"
+                className="gap-2"
+                onClick={() => handleAddToWatchlist(item.id)}
+              >
                 <Plus className="h-4 w-4" /> Add to Watchlist
               </Button>
             </div>

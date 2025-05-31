@@ -15,7 +15,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/use-auth";
 import { calculateDiscountedPrice, validateCoupon } from "@/services/coupon";
 import { createPurchase } from "@/services/purchase";
-import { CardElement, useElements, useStripe } from "@stripe/react-stripe-js";
 import { Clock, Download, ShoppingCart } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -53,22 +52,24 @@ export default function PurchaseOptions({
   const [discount, setDiscount] = useState(0);
   const [couponError, setCouponError] = useState("");
   const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
-  const stripe = useStripe();
-  const elements = useElements();
+  const [couponApplied, setCouponApplied] = useState(false);
 
   const handleCouponValidation = async () => {
     if (!couponCode.trim()) {
       setCouponError("Please enter a coupon code");
+      setCouponApplied(false);
       return;
     }
 
     setIsValidatingCoupon(true);
     setCouponError("");
+    setCouponApplied(false);
 
     try {
       const result = await validateCoupon(couponCode);
       if (result.isValid) {
         setDiscount(result.discount);
+        setCouponApplied(true);
         toast({
           title: "Coupon applied!",
           description: `${result.discount}% discount applied to your purchase`,
@@ -76,21 +77,26 @@ export default function PurchaseOptions({
       } else {
         setCouponError(result.message);
         setDiscount(0);
+        setCouponApplied(false);
       }
     } catch (error) {
       setCouponError("Failed to validate coupon");
       setDiscount(0);
+      setCouponApplied(false);
     } finally {
       setIsValidatingCoupon(false);
     }
   };
 
-  const getCurrentPrice = () => {
-    const basePrice = selected === "buy" ? price : rentPrice || 0;
-    return discount > 0
-      ? calculateDiscountedPrice(basePrice, discount)
-      : basePrice;
+  const handleCouponInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setCouponCode(e.target.value);
+    setCouponError("");
+    setCouponApplied(false);
+    setDiscount(0);
   };
+
+  const getDiscountedPrice = (base: number) =>
+    discount > 0 ? calculateDiscountedPrice(base, discount) : base;
 
   const handlePurchase = async () => {
     if (!user) {
@@ -102,35 +108,23 @@ export default function PurchaseOptions({
       router.push("/login");
       return;
     }
-    if (!stripe || !elements) return;
     setIsProcessing(true);
-    const cardElement = elements.getElement(CardElement);
-    const { paymentMethod, error } = await stripe.createPaymentMethod({
-      type: "card",
-      card: cardElement!,
-    });
-    if (error || !paymentMethod) {
-      toast({
-        title: "Payment error",
-        description: error?.message,
-        variant: "destructive",
-      });
-      setIsProcessing(false);
-      return;
-    }
     try {
       const res = await createPurchase({
-        userId: user.id,
         mediaId,
         type: selected.toUpperCase() as "RENT" | "BUY",
-        price: getCurrentPrice(),
-        paymentMethodId: paymentMethod.id,
+        discount: discount,
       });
-      toast({
-        title: "Purchase successful",
-        description: "You can now watch your movie!",
-      });
-      if (onPurchase) onPurchase();
+      if (res.data.url) {
+        window.location.href = res.data.url;
+      } else {
+        toast({
+          title: "Purchase failed",
+          description: res.message,
+          variant: "destructive",
+        });
+      }
+      // if (onPurchase) onPurchase();
     } catch (err: any) {
       toast({
         title: "Purchase failed",
@@ -157,25 +151,24 @@ export default function PurchaseOptions({
               id="coupon"
               placeholder="Enter coupon code"
               value={couponCode}
-              onChange={(e) => setCouponCode(e.target.value)}
-              disabled={isValidatingCoupon || isProcessing}
+              onChange={handleCouponInputChange}
+              disabled={isValidatingCoupon || isProcessing || couponApplied}
             />
             <Button
               variant="outline"
               onClick={handleCouponValidation}
-              disabled={isValidatingCoupon || isProcessing}
+              disabled={isValidatingCoupon || isProcessing || couponApplied}
             >
               Apply
             </Button>
           </div>
-          {couponError && (
+          {couponError ? (
             <p className="text-sm text-destructive">{couponError}</p>
-          )}
-          {discount > 0 && (
+          ) : couponApplied && discount > 0 ? (
             <p className="text-sm text-green-600">
               {discount}% discount applied!
             </p>
-          )}
+          ) : null}
         </div>
 
         <RadioGroup
@@ -197,7 +190,9 @@ export default function PurchaseOptions({
                       ${rentPrice}
                     </span>
                   )}
-                  <div className="font-semibold">${getCurrentPrice()}</div>
+                  <div className="font-semibold">
+                    ${getDiscountedPrice(rentPrice || 0)}
+                  </div>
                 </div>
               </div>
               <p className="text-sm text-muted-foreground mt-1">
@@ -214,7 +209,16 @@ export default function PurchaseOptions({
                   <Download className="h-4 w-4 text-muted-foreground" />
                   <span>Buy</span>
                 </div>
-                <div className="font-semibold">${price}</div>
+                <div className="flex flex-col items-end">
+                  {discount > 0 && (
+                    <span className="text-sm line-through text-muted-foreground">
+                      ${price}
+                    </span>
+                  )}
+                  <div className="font-semibold">
+                    ${getDiscountedPrice(price)}
+                  </div>
+                </div>
               </div>
               <p className="text-sm text-muted-foreground mt-1">
                 Own forever and watch anytime
@@ -222,16 +226,12 @@ export default function PurchaseOptions({
             </Label>
           </div>
         </RadioGroup>
-
-        <div className="my-4">
-          <CardElement options={{ hidePostalCode: true }} />
-        </div>
       </CardContent>
       <CardFooter>
         <Button
           className="w-full gap-2"
           onClick={handlePurchase}
-          disabled={isProcessing || !stripe || !elements}
+          disabled={isProcessing || !user}
         >
           <ShoppingCart className="h-4 w-4" />
           {isProcessing

@@ -5,12 +5,15 @@ import ReviewList from "@/components/review-list";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
 import { findRating } from "@/lib/find-rating";
-import { getAllMedia, getMediaById } from "@/services/media";
+import { addWatchLinst, getAllMedia, getMediaById } from "@/services/media";
 import { Calendar, Clock, Play, Plus, Star, Tag, Users } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 interface CommonDetailsPageProps {
@@ -40,6 +43,8 @@ export default function CommonDetailsPage({
   const [relatedMedia, setRelatedMedia] = useState<any[]>([]);
   const [ratings, setRatings] = useState<{ [key: string]: any }>({});
   const [showTrailer, setShowTrailer] = useState(false);
+  const { toast } = useToast();
+  const router = useRouter();
 
   useEffect(() => {
     async function fetchData() {
@@ -59,8 +64,51 @@ export default function CommonDetailsPage({
     fetchData();
   }, [id]);
 
+  const handleAddToWatchlist = async (id: string) => {
+    const response = await addWatchLinst(id);
+    console.log(response);
+    if (response.success) {
+      toast({
+        title: "Success",
+        description: response.message,
+      });
+    } else {
+      toast({
+        title: "Error",
+        variant: "destructive",
+        description: response.message,
+      });
+    }
+  };
+
   if (!media) {
-    return <div>{type === "MOVIE" ? "Movie" : "Series"} not found</div>;
+    return (
+      <div className="container mx-auto px-4 py-8">
+        {/* Hero Section Skeleton */}
+        <div className="relative h-[400px] md:h-[500px] mb-8 rounded-xl overflow-hidden shadow-lg">
+          <Skeleton className="absolute inset-0 w-full h-full" />
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 space-y-6">
+            <Skeleton className="h-10 w-2/3 mb-4" /> {/* Title */}
+            <div className="flex gap-2 mb-4">
+              <Skeleton className="h-6 w-20" />
+              <Skeleton className="h-6 w-12" />
+              <Skeleton className="h-6 w-16" />
+            </div>
+            <Skeleton className="h-6 w-1/2 mb-2" />
+            <Skeleton className="h-32 w-full mb-4" /> {/* Description */}
+            <Skeleton className="h-10 w-1/3 mb-2" />
+            <Skeleton className="h-10 w-1/4 mb-2" />
+            <Skeleton className="h-10 w-1/5 mb-2" />
+          </div>
+          <div className="space-y-4">
+            <Skeleton className="h-96 w-64 rounded-lg" /> {/* Poster */}
+            <Skeleton className="h-12 w-full" />
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -121,6 +169,7 @@ export default function CommonDetailsPage({
                 <Button
                   size="lg"
                   className="gap-3 bg-yellow-500 hover:bg-yellow-600 text-black font-bold px-6 py-3 rounded-lg shadow-md"
+                  onClick={() => router.push(`#purchase`)}
                 >
                   <Play className="h-5 w-5" /> Watch Now
                 </Button>
@@ -138,6 +187,7 @@ export default function CommonDetailsPage({
                   size="lg"
                   variant="outline"
                   className="gap-3 border-gray-300 text-gray-300 hover:border-white hover:text-white px-6 py-3 rounded-lg"
+                  onClick={() => handleAddToWatchlist(media.id)}
                 >
                   <Plus className="h-5 w-5" /> Add to Watchlist
                 </Button>
@@ -250,7 +300,7 @@ export default function CommonDetailsPage({
           </Tabs>
         </div>
 
-        <div>
+        <div id="purchase">
           <PurchaseOptions
             price={media.price}
             rentPrice={media.rentPrice}

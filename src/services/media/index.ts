@@ -104,3 +104,35 @@ export async function getRating(id: string) {
   });
   return rating;
 }
+
+export async function addWatchLinst(id: string) {
+  try {
+    const tkn = await token();
+    const response = await fetch(`${API_BASE_URL}/user/watchlist`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${tkn?.value}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ mediaId: id }),
+    });
+    return await response.json();
+  } catch (error) {
+    throw error;
+  }
+}
+
+export async function getWatchlist() {
+  try {
+    const tkn = await token();
+    const response = await fetch(`${API_BASE_URL}/user/watchlist`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${tkn?.value}`,
+      },
+    });
+    return await response.json();
+  } catch (error) {
+    throw error;
+  }
+}

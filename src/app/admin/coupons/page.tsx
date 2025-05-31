@@ -15,8 +15,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { createCoupon, getAllCoupons } from "@/services/coupon";
 import { ColumnDef } from "@tanstack/react-table";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export interface CouponData {
   id: string;
@@ -26,6 +27,8 @@ export interface CouponData {
   usedCount: number;
   status: string;
   expiresAt: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 const columns: ColumnDef<CouponData>[] = [
@@ -81,6 +84,31 @@ export default function CouponManagement() {
   const [loading, setLoading] = useState(false);
   const [coupons, setCoupons] = useState<CouponData[]>([]);
 
+  useEffect(() => {
+    const fetchCoupons = async () => {
+      setLoading(true);
+      try {
+        const res = await getAllCoupons();
+        console.log("Fetched Coupons:", res);
+
+        if (res.data) {
+          setCoupons(res.data);
+        }
+      } catch (error) {
+        toast({
+          variant: "destructive",
+          title: `Error ${
+            error instanceof Error ? error.message : "Unknown error"
+          }`,
+          description: "Failed to fetch coupons",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCoupons();
+  }, []);
+
   const handleCreateCoupon = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
@@ -90,20 +118,27 @@ export default function CouponManagement() {
       code: formData.get("code"),
       discount: Number(formData.get("discount")),
       maxUses: Number(formData.get("maxUses")),
-      expiresAt: formData.get("expiresAt"),
+      expiresAt: new Date(formData.get("expiresAt") as string).toISOString(),
     };
 
     try {
       // API call to create coupon
-      toast({
-        title: "Success",
-        description: "Coupon created successfully",
-      });
-      setOpen(false);
+      const res = await createCoupon(data);
+      if (res.status && res.data) {
+        // Update local state with the new coupon
+        toast({
+          title: "Success",
+          description: "Coupon created successfully",
+        });
+        setOpen(false);
+        e.currentTarget.reset(); // Reset the form
+      }
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Error",
+        title: `Error ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`,
         description: "Failed to create coupon",
       });
     } finally {

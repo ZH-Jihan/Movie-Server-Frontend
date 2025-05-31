@@ -5,43 +5,50 @@ import MediaGrid from "@/components/media-grid";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import LoadingSpinner from "@/components/ui/loading-spinner";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MediaItem } from "@/interfaces/media-item";
-import { getAllMedia } from "@/services/media";
+import { getAllMedia, getTopRated } from "@/services/media";
 import { Search } from "lucide-react";
 import { Suspense, useEffect, useState } from "react";
+
 type propr = {
-  data: MediaItem[];
-  toprated: MediaItem[];
   ratings: Record<string, number>;
 };
-const HomePage = ({ data, toprated, ratings }: propr) => {
-  const [allmedia, setAllMedia] = useState<MediaItem[]>(data || []);
+const HomePage = ({ ratings }: propr) => {
+  const [allmedia, setAllMedia] = useState<MediaItem[]>([]);
   const [search, setSearch] = useState("");
   const [genre, setGenre] = useState("");
 
-  const [topRatedMedia, setTopRatedMedia] = useState<MediaItem[]>(
-    toprated || []
-  );
+  const [topRatedMedia, setTopRatedMedia] = useState<MediaItem[]>([]);
   const [newlyAddedMedia, setNewlyAddedMedia] = useState<MediaItem[]>([]);
   const [featuredMedia, setFeaturedMedia] = useState<MediaItem[]>([]);
-  const [originalMedia, setOriginalMedia] = useState<MediaItem[]>(data || []);
+  const [originalMedia, setOriginalMedia] = useState<MediaItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
   // Fetch all media items based on search and genre
   useEffect(() => {
     const fetchData = async () => {
-      const data = await getAllMedia({ search });
+      setLoading(true);
+      const data = await getAllMedia({ search , limit:10});
+      const { data: toprated } = await getTopRated();
       setAllMedia(data?.data || []);
       setOriginalMedia(data?.data || []);
+      setTopRatedMedia(toprated || []);
+      setFeaturedMedia(data?.data || []);
       if (genre) {
         const filteredData = originalMedia.filter(
           (m) => m.genres && m.genres.includes(genre)
         );
         setAllMedia(filteredData);
       }
+      setLoading(false);
     };
     fetchData();
   }, [search, genre]);
+
+  console.log(featuredMedia);
+  console.log(allmedia);
 
   useEffect(() => {
     setNewlyAddedMedia(
@@ -51,9 +58,6 @@ const HomePage = ({ data, toprated, ratings }: propr) => {
           new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
       ) || []
     );
-    setFeaturedMedia(
-      allmedia?.filter((item) => item.isPublished === false) || []
-    );
   }, [allmedia]);
 
   return (
@@ -61,7 +65,11 @@ const HomePage = ({ data, toprated, ratings }: propr) => {
       {/* Hero Section */}
       <section className="relative mb-12">
         <Suspense fallback={<LoadingSpinner size={40} />}>
-          <FeaturedCarousel items={data} rating={ratings} />
+          {loading ? (
+            <Skeleton className="w-full h-80 mb-8" />
+          ) : (
+            <FeaturedCarousel items={featuredMedia} rating={ratings} />
+          )}
         </Suspense>
 
         {/* Search Bar */}
@@ -123,7 +131,7 @@ const HomePage = ({ data, toprated, ratings }: propr) => {
 
         <TabsContent value="all">
           <Suspense fallback={<LoadingSpinner size={40} />}>
-            <MediaGrid items={allmedia} ratings={ratings} />
+            <MediaGrid items={allmedia} ratings={ratings} loading={loading} />
           </Suspense>
         </TabsContent>
 
@@ -135,6 +143,7 @@ const HomePage = ({ data, toprated, ratings }: propr) => {
                 type: item.type.toLowerCase(),
               }))}
               ratings={ratings}
+              loading={loading}
             />
           </Suspense>
         </TabsContent>
@@ -147,6 +156,7 @@ const HomePage = ({ data, toprated, ratings }: propr) => {
                 type: item.type.toLowerCase(),
               }))}
               ratings={ratings}
+              loading={loading}
             />
           </Suspense>
         </TabsContent>
@@ -159,6 +169,7 @@ const HomePage = ({ data, toprated, ratings }: propr) => {
                 type: item.type.toLowerCase(),
               }))}
               ratings={ratings}
+              loading={loading}
             />
           </Suspense>
         </TabsContent>

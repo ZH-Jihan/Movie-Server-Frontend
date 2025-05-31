@@ -4,13 +4,31 @@ import type { MediaItem } from "@/interfaces/media-item";
 import { Play, Star } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface MediaGridProps {
   items: MediaItem[];
   ratings: Record<string, number>;
+  loading?: boolean;
 }
 
-export default function MediaGrid({ items, ratings }: MediaGridProps) {
+export default function MediaGrid({ items, ratings, loading }: MediaGridProps) {
+  if (loading) {
+    return (
+      <div className="overflow-x-auto">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
+          {Array.from({ length: 10 }).map((_, i) => (
+            <div key={i}>
+              <Skeleton className="w-full aspect-[2/3] mb-2" />
+              <Skeleton className="h-6 w-3/4 mb-1" />
+              <Skeleton className="h-4 w-1/2" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="overflow-x-auto">
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">

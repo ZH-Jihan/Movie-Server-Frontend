@@ -1,22 +1,37 @@
-import axios from "axios";
+import { API_BASE_URL } from "@/lib/api";
+import { token } from "../auth";
 
 export const createPurchase = async (data: {
-  userId: string;
   mediaId: string;
   type: "RENT" | "BUY";
-  price: number;
-  paymentMethodId: string;
+  discount: number;
 }) => {
-  const res = await axios.post("/api/purchases", data);
-  return res.data;
+  const tkn = await token();
+  const res = await fetch(`${API_BASE_URL}/purchases`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${tkn?.value}`,
+    },
+    body: JSON.stringify(data),
+  });
+  return res.json();
 };
 
-export const getUserPurchases = async (userId: string) => {
-  const res = await axios.get(`/api/purchases/user/${userId}`);
-  return res.data;
+export const getUserPurchases = async () => {
+  const tkn = await token();
+  const res = await fetch(`${API_BASE_URL}/purchases/user`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${tkn?.value}`,
+    },
+  });
+  return res.json();
 };
 
-export const updatePurchaseStatus = async (id: string, status: string) => {
-  const res = await axios.patch(`/api/purchases/${id}/status`, { status });
-  return res.data;
+export const getPurchaseByTransactionId = async (transactionId: string) => {
+  const res = await fetch(`${API_BASE_URL}/purchases/${transactionId}`, {
+    method: "GET",
+  });
+  return res.json();
 };

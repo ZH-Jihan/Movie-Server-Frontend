@@ -23,6 +23,21 @@ export async function getAllReviews(
     return [];
   });
 }
+export async function getUserReviews(
+  onJwtExpired?: () => void
+): Promise<TPandingReview[]> {
+  const tkn = await token();
+  return apiFetch(`${API_BASE_URL}/review/user`, {
+    headers: {
+      Authorization: `Bearer ${tkn?.value}`,
+    },
+    onJwtExpired,
+  }).then((data) => {
+    if (Array.isArray(data)) return data;
+    if (Array.isArray(data.data)) return data.data;
+    return [];
+  });
+}
 export async function getReviewsByMediaId(
   mediaId: string,
   onJwtExpired?: () => void
